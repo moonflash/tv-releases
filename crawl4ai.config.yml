@@ -37,9 +37,13 @@ llm:
 #   pool_size: 10
 #   timeout: 5
 
+redis: {}
+
 # Rate Limiting Configuration
 rate_limiting:
   enabled: false
+  default_limit: "100/minute"
+  storage_uri: "memory://"
 
 # Security Configuration
 security:

@@ -29,7 +29,7 @@ gem "bootsnap", require: false
 # gem "image_processing", "~> 1.2"
 
 # Use Webpacker + React
-gem "webpacker", github: "rails/webpacker", branch: "main"
+gem "webpacker", "~> 5.4"
 gem "react-rails", "~> 2.7"
 
 group :development, :test do

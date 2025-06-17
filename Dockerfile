@@ -5,7 +5,7 @@
 # docker run -d -p 80:80 -p 443:443 --name my-app -e RAILS_MASTER_KEY=<value from config/master.key> my-app
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version
-ARG RUBY_VERSION=3.2.3
+ARG RUBY_VERSION=3.3.0
 FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 
 # Rails app lives here
@@ -43,11 +43,21 @@ COPY . .
 # Precompile bootsnap code for faster boot times
 RUN bundle exec bootsnap precompile app/ lib/
 
-# Precompiling assets for production without requiring secret RAILS_MASTER_KEY
+# Install webpack dependencies (local only)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get update && \
+    apt-get install -y nodejs && \
+    npm install -g yarn && \
+    node -v && \
+    yarn install && \
+    yarn add @babel/preset-react @rails/webpacker babel-plugin-transform-react-remove-prop-types prop-types react react-dom react_ujs webpack webpack-cli && \
+    yarn add --dev webpack-dev-server @babel/core @babel/preset-env @babel/preset-react babel-loader @babel/plugin-proposal-private-methods @babel/plugin-proposal-private-property-in-object
+
+# Ensure node_modules/.bin is in PATH for asset precompilation
+ENV PATH="./node_modules/.bin:$PATH"
+# Set legacy OpenSSL provider to avoid Webpack crypto error with Node >=17
+ENV NODE_OPTIONS="--openssl-legacy-provider"
 RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
-
-
-
 
 # Final stage for app image
 FROM base

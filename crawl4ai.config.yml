@@ -1,0 +1,137 @@
+app:
+  title: "Crawl4AI API"
+  version: "1.0.0"
+  host: "0.0.0.0"
+  port: 11235
+  reload: False
+  workers: 1
+  timeout_keep_alive: 300
+
+llm:
+  provider: "ollama/gemma3:27b-it-q4_K_M"
+  api_base: "https://ollama-1.koloit.net/4"
+  api_key: "Basic a29sbzpPY2VhbmFfMTk3MA=="
+  stream: false
+  extraction_strategy:
+    type: "schema"
+  debug: true  # Enable LLM debug mode
+  verbose: true
+  validation:
+    strict: true
+    max_retries: 3
+# redis:
+#   host: "localhost"
+#   port: 6379
+#   db: 0
+#   password: ""
+#   ssl: False
+#   ssl_cert_reqs: None
+#   ssl_ca_certs: None
+#   ssl_certfile: None
+#   ssl_keyfile: None
+#   ssl_cert_reqs: None
+#   ssl_ca_certs: None
+#   ssl_certfile: None
+#   ssl_keyfile: None
+#   uri: "redis://redis:6379"
+#   pool_size: 10
+#   timeout: 5
+
+# Rate Limiting Configuration
+rate_limiting:
+  enabled: false
+
+# Security Configuration
+security:
+  enabled: false 
+  jwt_enabled: false 
+  https_redirect: false
+  trusted_hosts: ["*"]
+  headers:
+    x_content_type_options: "nosniff"
+    x_frame_options: "DENY"
+    content_security_policy: "default-src 'self'"
+    strict_transport_security: "max-age=63072000; includeSubDomains"
+  cors:
+    enabled: true
+    allow_origins: ["*"]
+    allow_methods: ["*"]
+    allow_headers: ["*"]
+  api_key_auth: false
+  rate_limiting: true
+  debug: true  # Enable security debug mode
+
+# Crawler Configuration
+crawler:
+  base_config:
+    simulate_user: true
+    verbose: true  # Enable verbose output
+    debug: true    # Enable debug mode
+    log_level: "DEBUG"  # Set log level to DEBUG
+    log_format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    log_file: "logs/crawler.log"
+  memory_threshold_percent: 95.0
+  rate_limiter:
+    enabled: true
+    base_delay: [1.0, 2.0]
+  timeouts:
+    stream_init: 30.0  # Timeout for stream initialization
+    batch_process: 300.0  # Timeout for batch processing
+  pool:
+    max_pages: 30
+    max_workers: 4
+    timeout: 30
+    idle_ttl_sec: 1800                     # ← 30 min janitor cutoff
+  browser:
+    kwargs:
+      headless: true
+      text_mode: true
+    extra_args:
+      # - "--single-process"
+      - "--no-sandbox"
+      - "--disable-dev-shm-usage"
+      - "--disable-gpu"
+      - "--disable-software-rasterizer"
+      - "--disable-web-security"
+      - "--allow-insecure-localhost"
+      - "--ignore-certificate-errors"
+    timeout: 30
+    wait_time: 5
+
+# Logging Configuration
+logging:
+  level: "DEBUG"  # Changed from INFO to DEBUG
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  handlers:
+    console:
+      level: "DEBUG"
+      format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    file:
+      level: "DEBUG"
+      format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+      filename: "logs/crawler.log"
+      max_bytes: 10485760  # 10MB
+      backup_count: 5
+
+# Observability Configuration
+observability:
+  prometheus:
+    enabled: True
+    endpoint: "/metrics"
+  health_check:
+    endpoint: "/health"
+  metrics:
+    enabled: true
+    endpoint: "/metrics"
+  tracing:
+    enabled: true
+    service_name: "crawler"
+  logging:
+    level: "DEBUG"
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    handlers:
+      console:
+        level: "DEBUG"
+      file:
+        level: "DEBUG"
+        filename: "logs/crawler.log"

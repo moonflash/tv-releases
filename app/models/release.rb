@@ -20,13 +20,25 @@ class Release < ApplicationRecord
     )
     return nil unless network
 
-    # Find or create show
-    show = Show.find_or_create_from_external_id(release_data["show_id"], network)
+    # Find or create show with minimal data
+    show = Show.find_or_create_by(external_id: release_data["show_id"]) do |s|
+      s.network = network
+    end
     return nil unless show
 
-    # Find or create episode
-    episode = Episode.find_or_create_from_external_id(release_data["episode_id"], show)
+    # Enqueue show data extraction if show is new or incomplete
+    ExtractShowDataJob.perform_later(release_data["show_id"]) if show.title.blank?
+
+    # Find or create episode with minimal data
+    episode = Episode.find_or_create_by(external_id: release_data["episode_id"]) do |e|
+      e.show = show
+      e.season_number = 0  # Temporary value
+      e.episode_number = 0 # Temporary value
+    end
     return nil unless episode
+
+    # Enqueue episode data extraction if episode is new or incomplete
+    ExtractEpisodeDataJob.perform_later(release_data["episode_id"]) if episode.season_number.zero?
 
     # Check if release already exists
     existing = find_by(

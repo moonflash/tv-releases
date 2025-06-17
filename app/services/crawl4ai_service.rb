@@ -12,7 +12,10 @@ class Crawl4aiService
       There will be at least 18 releases on the page and you should recognize them all.
       Be aware that date-time will look like this: Jun 16, 2025 at 22:00.
       There will also be announcements for each releases with sometning like "In 7 hours" or "In a day" that you should ignore.
+      Extract url for the release and external_id from the url.
+      Recognize countre form the image url.
       Episode number and season number will look like 8x01 (8 is episode, season is 1)
+
       Return the list of releases and extract values using the following JSON schema:
 
      schema: {
@@ -25,7 +28,11 @@ class Crawl4aiService
             date:   { type: "string", format: "date", pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
             time:   { type: "string", format: "time", pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
             title:  { type: "string" },
-            channel: { type: "string" }
+            channel: { type: "string" },
+            country: { type: "string" },
+            country_code: { type: "string" },
+            external_id: { type: "string" },
+            url: { type: "string" },
             episode: {
               type: "object",
               properties: {

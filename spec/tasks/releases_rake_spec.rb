@@ -107,25 +107,25 @@ RSpec.describe 'releases rake tasks', type: :task do
     end
 
     context 'when cleanup is successful' do
+      let(:country) { Country.create!(name: 'United States', shortcode: 'US') }
+      let(:network) { Network.create!(name: 'HBO', external_id: 'hbo_123', country: country) }
+      let(:show) { Show.create!(title: 'Old Show', external_id: 'show_old', network: network) }
+      let(:episode) { Episode.create!(season_number: 1, episode_number: 1, external_id: 'ep_old', show: show) }
       let!(:old_release) do
         Release.create!(
-          title: 'Old Show',
           air_date: Date.current - 10.days,
           air_time: '20:00:00',
-          season_number: 1,
-          episode_number: 1,
-          episode_title: 'Pilot'
+          episode: episode
         )
       end
 
+      let(:recent_show) { Show.create!(title: 'Recent Show', external_id: 'show_recent', network: network) }
+      let(:recent_episode) { Episode.create!(season_number: 1, episode_number: 1, external_id: 'ep_recent', show: recent_show) }
       let!(:recent_release) do
         Release.create!(
-          title: 'Recent Show',
           air_date: Date.current - 2.days,
           air_time: '21:00:00',
-          season_number: 1,
-          episode_number: 1,
-          episode_title: 'Pilot'
+          episode: recent_episode
         )
       end
 

@@ -98,11 +98,14 @@ class ReleaseImportService
         }
 
         # Try to create release using new structure
-        release = Release.find_or_create_from_crawl_data(transformed_data)
+        result = Release.find_or_create_from_crawl_data(transformed_data)
 
-        if release&.persisted?
+        if result == :skipped
+          @skipped_count += 1
+          Rails.logger.debug "[ReleaseImportService] Skipped existing release: #{transformed_data.inspect}"
+        elsif result&.persisted?
           @imported_count += 1
-          Rails.logger.info "[ReleaseImportService] Imported: #{release.title} - #{release.episode_title} (#{release.air_date})"
+          Rails.logger.info "[ReleaseImportService] Imported: #{result.title} - #{result.episode_title} (#{result.air_date})"
         else
           @skipped_count += 1
           Rails.logger.debug "[ReleaseImportService] Skipped or already exists: #{transformed_data.inspect}"

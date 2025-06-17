@@ -9,17 +9,17 @@ RSpec.describe ReleaseImportService, type: :service do
         {
           'date' => '2025-06-17',
           'time' => '22:00',
-          'show_id' => 'show_123',
-          'episode_id' => 'ep_456',
-          'network_id' => 'net_789',
+          'show_id' => 123,
+          'episode_id' => 456,
+          'network_id' => 789,
           'network_name' => 'HBO'
         },
         {
           'date' => '2025-06-18',
           'time' => '21:00',
-          'show_id' => 'show_456',
-          'episode_id' => 'ep_789',
-          'network_id' => 'net_123',
+          'show_id' => 456,
+          'episode_id' => 789,
+          'network_id' => 123,
           'network_name' => 'Netflix'
         }
       ]
@@ -46,6 +46,9 @@ RSpec.describe ReleaseImportService, type: :service do
       allow(Crawl4aiService).to receive(:extract).and_return(mock_releases_data, [])
       allow(Crawl4aiService).to receive(:extract_show).and_return(show_data)
       allow(Crawl4aiService).to receive(:extract_episode).and_return(episode_data)
+      
+      # Mock extract_with_retry to prevent sleep calls
+      allow_any_instance_of(ReleaseImportService).to receive(:extract_with_retry).and_return(mock_releases_data, [])
     end
 
     it 'imports releases successfully' do
@@ -77,18 +80,21 @@ RSpec.describe ReleaseImportService, type: :service do
     context 'when releases already exist' do
       before do
         # Mock service calls for pre-existing release creation
-        allow(Crawl4aiService).to receive(:extract_show).with('show_123').and_return(show_data)
-        allow(Crawl4aiService).to receive(:extract_episode).with('ep_456').and_return(episode_data)
+        allow(Crawl4aiService).to receive(:extract_show).with(123).and_return(show_data)
+        allow(Crawl4aiService).to receive(:extract_episode).with(456).and_return(episode_data)
         
         # Create the first release before running import
         Release.find_or_create_from_crawl_data({
           'date' => '2025-06-17',
           'time' => '22:00',
-          'show_id' => 'show_123',
-          'episode_id' => 'ep_456',
-          'network_id' => 'net_789',
+          'show_id' => 123,
+          'episode_id' => 456,
+          'network_id' => 789,
           'network_name' => 'HBO'
         })
+
+        # Mock extract_with_retry to return both releases so the import loop processes both
+        allow_any_instance_of(ReleaseImportService).to receive(:extract_with_retry).and_return(mock_releases_data, [])
       end
 
       it 'skips existing releases' do
@@ -105,18 +111,18 @@ RSpec.describe ReleaseImportService, type: :service do
         [{
           'date' => (Date.current + 200.days).to_s,
           'time' => '22:00',
-          'show_id' => 'show_123',
-          'episode_id' => 'ep_456',
-          'network_id' => 'net_789',
+          'show_id' => 123,
+          'episode_id' => 456,
+          'network_id' => 789,
           'network_name' => 'HBO'
         }]
       end
 
       before do
-        allow(Crawl4aiService).to receive(:extract).and_return(far_future_data, [])
-        # Mock service calls even for cutoff dates to prevent HTTP requests
         allow(Crawl4aiService).to receive(:extract_show).and_return(show_data)
         allow(Crawl4aiService).to receive(:extract_episode).and_return(episode_data)
+        # Mock extract_with_retry to return far future data
+        allow_any_instance_of(ReleaseImportService).to receive(:extract_with_retry).and_return(far_future_data, [])
       end
 
       it 'stops processing when all releases are beyond cutoff' do
@@ -133,18 +139,18 @@ RSpec.describe ReleaseImportService, type: :service do
         [{
           'date' => '2025-06-17',
           'time' => '22:00',
-          'show_id' => 'show_123',
-          'episode_id' => 'ep_456',
+          'show_id' => 123,
+          'episode_id' => 456,
           'network_id' => '', # This will cause network creation to fail
           'network_name' => 'HBO'
         }]
       end
 
       before do
-        allow(Crawl4aiService).to receive(:extract).and_return(bad_data, [])
-        # Mock service calls even for failure scenarios
         allow(Crawl4aiService).to receive(:extract_show).and_return(show_data)
         allow(Crawl4aiService).to receive(:extract_episode).and_return(episode_data)
+        # Mock extract_with_retry to return bad data
+        allow_any_instance_of(ReleaseImportService).to receive(:extract_with_retry).and_return(bad_data, [])
       end
 
       it 'handles network creation failures gracefully' do

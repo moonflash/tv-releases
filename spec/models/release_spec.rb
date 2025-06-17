@@ -36,8 +36,8 @@ RSpec.describe Release, type: :model do
 
   describe 'scopes' do
     let(:past_episode) { Episode.create!(season_number: 10, episode_number: 1, external_id: 'ep_past_unique', show: show) }
-    let(:today_episode) { Episode.create!(season_number: 10, episode_number: 2, external_id: 'ep_today_unique', show: show) }
-    let(:future_episode) { Episode.create!(season_number: 10, episode_number: 3, external_id: 'ep_future_unique', show: show) }
+    let(:today_episode) { Episode.create!(season_number: 11, episode_number: 2, external_id: 'ep_today_unique', show: show) }
+    let(:future_episode) { Episode.create!(season_number: 12, episode_number: 3, external_id: 'ep_future_unique', show: show) }
 
     let!(:past_release) { Release.create!(air_date: 1.day.ago, air_time: '20:00:00', episode: past_episode) }
     let!(:today_release) { Release.create!(air_date: Date.current, air_time: '20:00:00', episode: today_episode) }
@@ -117,7 +117,7 @@ RSpec.describe Release, type: :model do
       # Try to create again with same data
       expect {
         second_release = Release.find_or_create_from_crawl_data(crawl_data)
-        expect(second_release).to eq(first_release)
+        expect(second_release).to eq(:skipped)
       }.not_to change(Release, :count)
     end
 

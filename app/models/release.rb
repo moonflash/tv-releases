@@ -36,7 +36,7 @@ class Release < ApplicationRecord
     )
 
     if existing
-      return existing
+      return :skipped
     end
 
     # Create new release

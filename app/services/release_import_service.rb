@@ -22,7 +22,7 @@ class ReleaseImportService
 
     page = 1
     loop do
-            Rails.logger.info "[ReleaseImportService] Processing page #{page}"
+      Rails.logger.info "[ReleaseImportService] Processing page #{page}"
 
       url = "#{BASE_URL}?page=#{page}"
       releases_data = extract_with_retry(url)
@@ -52,7 +52,7 @@ class ReleaseImportService
     }
   end
 
-    private
+  private
 
   def extract_with_retry(url)
     retries = 0
@@ -87,47 +87,34 @@ class ReleaseImportService
         # Skip if release is beyond our cutoff date
         next if release_beyond_cutoff?(release_data)
 
-        # Find or create channel
-        channel = find_or_create_channel(release_data["channel"])
+        # Transform data to expected format for new structure
+        transformed_data = {
+          "date" => release_data["date"],
+          "time" => release_data["time"],
+          "show_id" => release_data["show_id"],
+          "episode_id" => release_data["episode_id"],
+          "network_id" => release_data["network_id"],
+          "network_name" => release_data["network_name"] || "Unknown Network"
+        }
 
-        # Find or create release
-        existing_release = Release.find_by(
-          title: release_data["title"],
-          air_date: Date.parse(release_data["date"]),
-          air_time: Time.parse(release_data["time"]).strftime("%H:%M:%S"),
-          season_number: release_data.dig("episode", "season"),
-          episode_number: release_data.dig("episode", "number")
-        )
+        # Try to create release using new structure
+        release = Release.find_or_create_from_crawl_data(transformed_data)
 
-        if existing_release
-          @skipped_count += 1
-          Rails.logger.debug "[ReleaseImportService] Skipped duplicate: #{existing_release.title} (#{existing_release.air_date})"
+        if release&.persisted?
+          @imported_count += 1
+          Rails.logger.info "[ReleaseImportService] Imported: #{release.title} - #{release.episode_title} (#{release.air_date})"
         else
-          release = Release.find_or_create_from_crawl_data(release_data, channel)
-          if release.persisted?
-            @imported_count += 1
-            Rails.logger.info "[ReleaseImportService] Imported: #{release.title} (#{release.air_date})"
-          else
-            @error_count += 1
-            Rails.logger.error "[ReleaseImportService] Failed to save release: #{release.errors.full_messages.join(', ')}"
-          end
+          @skipped_count += 1
+          Rails.logger.debug "[ReleaseImportService] Skipped or already exists: #{transformed_data.inspect}"
         end
 
       rescue => e
         @error_count += 1
         Rails.logger.error "[ReleaseImportService] Error processing release: #{e.message}"
+        Rails.logger.error "[ReleaseImportService] Release data: #{release_data.inspect}"
         Rails.logger.error e.backtrace.join("\n")
       end
     end
-  end
-
-  def find_or_create_channel(channel_name)
-    return nil if channel_name.blank?
-
-    Channel.find_or_create_by_fuzzy_name(channel_name)
-  rescue => e
-    Rails.logger.error "[ReleaseImportService] Error finding/creating channel '#{channel_name}': #{e.message}"
-    nil
   end
 
   def beyond_cutoff_date?(releases_data)

@@ -23,10 +23,28 @@ RSpec.describe Country, type: :model do
   end
 
   describe 'associations' do
-    it 'has many releases' do
-      association = Country.reflect_on_association(:releases)
+    it 'has many networks' do
+      association = Country.reflect_on_association(:networks)
       expect(association.macro).to eq(:has_many)
       expect(association.options[:dependent]).to eq(:nullify)
+    end
+
+    it 'has many shows through networks' do
+      association = Country.reflect_on_association(:shows)
+      expect(association.macro).to eq(:has_many)
+      expect(association.options[:through]).to eq(:networks)
+    end
+
+    it 'has many episodes through shows' do
+      association = Country.reflect_on_association(:episodes)
+      expect(association.macro).to eq(:has_many)
+      expect(association.options[:through]).to eq(:shows)
+    end
+
+    it 'has many releases through episodes' do
+      association = Country.reflect_on_association(:releases)
+      expect(association.macro).to eq(:has_many)
+      expect(association.options[:through]).to eq(:episodes)
     end
   end
 

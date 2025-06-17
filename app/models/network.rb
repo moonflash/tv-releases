@@ -1,38 +1,57 @@
-class Channel < ApplicationRecord
-  has_many :releases, dependent: :destroy
+class Network < ApplicationRecord
+  belongs_to :country, optional: true
+  has_many :shows, dependent: :destroy
+  has_many :episodes, through: :shows
+  has_many :releases, through: :episodes
 
   validates :name, presence: true, uniqueness: { case_sensitive: false }
+  validates :external_id, presence: true, uniqueness: true
 
   before_save :normalize_name
 
-  # Find or create a channel with fuzzy name matching
-  def self.find_or_create_by_fuzzy_name(channel_name)
-    return nil if channel_name.blank?
+  # Find or create a network with fuzzy name matching
+  def self.find_or_create_by_fuzzy_name_and_external_id(network_name, external_id, country = nil)
+    return nil if network_name.blank? || external_id.blank?
 
-    normalized_name = normalize_channel_name(channel_name)
+    # First try to find by external_id
+    network = find_by(external_id: external_id)
+    return network if network
 
-    # First try exact match (case insensitive)
-    channel = find_by("LOWER(name) = ?", normalized_name.downcase)
-    return channel if channel
+    normalized_name = normalize_network_name(network_name)
 
-    # Try fuzzy matching for similar names
-    existing_channels = all.select do |ch|
-      similarity_score(ch.name.downcase, normalized_name.downcase) > 0.8
+    # Try exact match (case insensitive)
+    network = find_by("LOWER(name) = ?", normalized_name.downcase)
+    if network
+      network.update!(external_id: external_id) if network.external_id != external_id
+      return network
     end
 
-    return existing_channels.first if existing_channels.any?
+    # Try fuzzy matching for similar names
+    existing_networks = all.select do |net|
+      similarity_score(net.name.downcase, normalized_name.downcase) > 0.8
+    end
 
-    # Create new channel
-    create!(name: normalized_name)
+    if existing_networks.any?
+      network = existing_networks.first
+      network.update!(external_id: external_id) if network.external_id != external_id
+      return network
+    end
+
+    # Create new network
+    create!(
+      name: normalized_name,
+      external_id: external_id,
+      country: country
+    )
   end
 
   private
 
   def normalize_name
-    self.name = self.class.normalize_channel_name(name)
+    self.name = self.class.normalize_network_name(name)
   end
 
-  def self.normalize_channel_name(name)
+  def self.normalize_network_name(name)
     return "" if name.blank?
 
     # Remove common TV network suffixes/prefixes and normalize
@@ -93,4 +112,4 @@ class Channel < ApplicationRecord
 
     matrix[str1.length][str2.length]
   end
-end
+end 

@@ -1,5 +1,8 @@
 class Country < ApplicationRecord
-  has_many :releases, dependent: :nullify
+  has_many :networks, dependent: :nullify
+  has_many :shows, through: :networks
+  has_many :episodes, through: :shows
+  has_many :releases, through: :episodes
 
   validates :name, presence: true
   validates :shortcode, presence: true, uniqueness: true

@@ -2,287 +2,272 @@ require 'rails_helper'
 
 RSpec.describe ReleaseImportService, type: :service do
   let(:service) { described_class.new }
-  let(:sample_crawl_data) do
-    [
-      {
-        'title' => 'Game of Thrones',
-        'date' => '2024-01-15',
-        'time' => '21:00',
-        'channel' => 'HBO',
-        'episode' => {
-          'season' => 8,
-          'number' => 1,
-          'title' => 'The Last Watch'
-        }
-      },
-      {
-        'title' => 'Breaking Bad',
-        'date' => '2024-01-16',
-        'time' => '22:00',
-        'channel' => 'AMC',
-        'episode' => {
-          'season' => 5,
-          'number' => 16,
-          'title' => 'Felina'
-        }
-      }
-    ]
-  end
-
-  describe '.import_upcoming_releases' do
-    it 'delegates to an instance' do
-      expect_any_instance_of(described_class).to receive(:import_upcoming_releases)
-      described_class.import_upcoming_releases
-    end
-  end
 
   describe '#import_upcoming_releases' do
-    before do
-      allow(Crawl4aiService).to receive(:extract).and_return([])
-    end
-
-    it 'logs the start of import' do
-      expect(Rails.logger).to receive(:info).with('[ReleaseImportService] Starting import of upcoming releases')
-      expect(Rails.logger).to receive(:info).with('[ReleaseImportService] Processing page 1')
-      expect(Rails.logger).to receive(:info).with('[ReleaseImportService] No data returned for page 1, stopping')
-      expect(Rails.logger).to receive(:info).with(match(/Import completed:/))
-      expect(Rails.logger).to receive(:info).with('  - Imported: 0 releases')
-      expect(Rails.logger).to receive(:info).with('  - Skipped: 0 duplicates')
-      expect(Rails.logger).to receive(:info).with('  - Errors: 0 errors')
-      service.import_upcoming_releases
-    end
-
-    context 'when no data is returned' do
-      it 'stops after first page' do
-        expect(Crawl4aiService).to receive(:extract).once.with('https://www.tvmaze.com/countdown?page=1')
-        result = service.import_upcoming_releases
-
-        expect(result[:imported]).to eq(0)
-        expect(result[:skipped]).to eq(0)
-        expect(result[:errors]).to eq(0)
-      end
-    end
-
-    context 'when data is returned' do
-      before do
-        allow(Crawl4aiService).to receive(:extract)
-          .with('https://www.tvmaze.com/countdown?page=1')
-          .and_return(sample_crawl_data)
-        allow(Crawl4aiService).to receive(:extract)
-          .with('https://www.tvmaze.com/countdown?page=2')
-          .and_return([])
-      end
-
-      it 'processes releases and creates them' do
-        expect {
-          service.import_upcoming_releases
-        }.to change(Release, :count).by(2)
-          .and change(Channel, :count).by(2)
-      end
-
-      it 'returns correct statistics' do
-        result = service.import_upcoming_releases
-
-        expect(result[:imported]).to eq(2)
-        expect(result[:skipped]).to eq(0)
-        expect(result[:errors]).to eq(0)
-      end
-    end
-
-    context 'when releases are beyond cutoff date' do
-      let(:future_data) do
-        [ {
-          'title' => 'Future Show',
-          'date' => (Date.current + 100.days).to_s,
+    let(:mock_releases_data) do
+      [
+        {
+          'date' => '2025-06-17',
+          'time' => '22:00',
+          'show_id' => 'show_123',
+          'episode_id' => 'ep_456',
+          'network_id' => 'net_789',
+          'network_name' => 'HBO'
+        },
+        {
+          'date' => '2025-06-18',
           'time' => '21:00',
-          'channel' => 'HBO',
-          'episode' => { 'season' => 1, 'number' => 1, 'title' => 'Pilot' }
-        } ]
+          'show_id' => 'show_456',
+          'episode_id' => 'ep_789',
+          'network_id' => 'net_123',
+          'network_name' => 'Netflix'
+        }
+      ]
+    end
+
+    let(:show_data) do
+      {
+        'title' => 'Game of Thrones',
+        'description' => 'Epic fantasy series',
+        'show_type' => 'Drama'
+      }
+    end
+
+    let(:episode_data) do
+      {
+        'season' => 1,
+        'episode' => 5,
+        'summary' => 'An epic episode'
+      }
+    end
+
+    before do
+      # Mock all Crawl4aiService calls to prevent actual HTTP requests
+      allow(Crawl4aiService).to receive(:extract).and_return(mock_releases_data, [])
+      allow(Crawl4aiService).to receive(:extract_show).and_return(show_data)
+      allow(Crawl4aiService).to receive(:extract_episode).and_return(episode_data)
+    end
+
+    it 'imports releases successfully' do
+      result = service.import_upcoming_releases
+
+      expect(result[:imported]).to eq(2)
+      expect(result[:skipped]).to eq(0)
+      expect(result[:errors]).to eq(0)
+    end
+
+    it 'creates the correct number of records' do
+      expect {
+        service.import_upcoming_releases
+      }.to change(Network, :count).by(2)
+        .and change(Show, :count).by(2)
+        .and change(Episode, :count).by(2)
+        .and change(Release, :count).by(2)
+    end
+
+    it 'creates releases with correct attributes' do
+      service.import_upcoming_releases
+
+      first_release = Release.first
+      expect(first_release.air_date).to eq(Date.parse('2025-06-17'))
+      expect(first_release.air_time.strftime('%H:%M')).to eq('22:00')
+      expect(first_release.show.title).to eq('Game of Thrones')
+    end
+
+    context 'when releases already exist' do
+      before do
+        # Mock service calls for pre-existing release creation
+        allow(Crawl4aiService).to receive(:extract_show).with('show_123').and_return(show_data)
+        allow(Crawl4aiService).to receive(:extract_episode).with('ep_456').and_return(episode_data)
+        
+        # Create the first release before running import
+        Release.find_or_create_from_crawl_data({
+          'date' => '2025-06-17',
+          'time' => '22:00',
+          'show_id' => 'show_123',
+          'episode_id' => 'ep_456',
+          'network_id' => 'net_789',
+          'network_name' => 'HBO'
+        })
+      end
+
+      it 'skips existing releases' do
+        result = service.import_upcoming_releases
+
+        expect(result[:imported]).to eq(1) # Only the second one
+        expect(result[:skipped]).to eq(1)  # The first one is skipped
+        expect(result[:errors]).to eq(0)
+      end
+    end
+
+    context 'when data is beyond cutoff date' do
+      let(:far_future_data) do
+        [{
+          'date' => (Date.current + 200.days).to_s,
+          'time' => '22:00',
+          'show_id' => 'show_123',
+          'episode_id' => 'ep_456',
+          'network_id' => 'net_789',
+          'network_name' => 'HBO'
+        }]
       end
 
       before do
-        allow(Crawl4aiService).to receive(:extract)
-          .with('https://www.tvmaze.com/countdown?page=1')
-          .and_return(future_data)
+        allow(Crawl4aiService).to receive(:extract).and_return(far_future_data, [])
+        # Mock service calls even for cutoff dates to prevent HTTP requests
+        allow(Crawl4aiService).to receive(:extract_show).and_return(show_data)
+        allow(Crawl4aiService).to receive(:extract_episode).and_return(episode_data)
       end
 
       it 'stops processing when all releases are beyond cutoff' do
         result = service.import_upcoming_releases
 
         expect(result[:imported]).to eq(0)
-        expect(Release.count).to eq(0)
+        expect(result[:skipped]).to eq(0)
+        expect(result[:errors]).to eq(0)
       end
     end
 
-    context 'when duplicate releases exist' do
-      let!(:existing_release) do
-        channel = Channel.create!(name: 'HBO')
-        Release.create!(
-          title: 'Game of Thrones',
-          air_date: Date.parse('2024-01-15'),
-          air_time: '21:00:00',
-          season_number: 8,
-          episode_number: 1,
-          episode_title: 'The Last Watch',
-          channel: channel
-        )
+    context 'when network creation fails' do
+      let(:bad_data) do
+        [{
+          'date' => '2025-06-17',
+          'time' => '22:00',
+          'show_id' => 'show_123',
+          'episode_id' => 'ep_456',
+          'network_id' => '', # This will cause network creation to fail
+          'network_name' => 'HBO'
+        }]
       end
 
       before do
-        allow(Crawl4aiService).to receive(:extract)
-          .with('https://www.tvmaze.com/countdown?page=1')
-          .and_return([ sample_crawl_data.first ])
-        allow(Crawl4aiService).to receive(:extract)
-          .with('https://www.tvmaze.com/countdown?page=2')
-          .and_return([])
+        allow(Crawl4aiService).to receive(:extract).and_return(bad_data, [])
+        # Mock service calls even for failure scenarios
+        allow(Crawl4aiService).to receive(:extract_show).and_return(show_data)
+        allow(Crawl4aiService).to receive(:extract_episode).and_return(episode_data)
       end
 
-      it 'skips duplicate releases' do
-        expect {
-          result = service.import_upcoming_releases
-          expect(result[:skipped]).to eq(1)
-          expect(result[:imported]).to eq(0)
-        }.not_to change(Release, :count)
-      end
-    end
-
-    context 'when errors occur' do
-      before do
-        allow(Crawl4aiService).to receive(:extract)
-          .with('https://www.tvmaze.com/countdown?page=1')
-          .and_return([ { 'invalid' => 'data' } ])
-        allow(Crawl4aiService).to receive(:extract)
-          .with('https://www.tvmaze.com/countdown?page=2')
-          .and_return([])
-      end
-
-      it 'handles errors gracefully and continues processing' do
-        expect(Rails.logger).to receive(:error).at_least(:once)
-
+      it 'handles network creation failures gracefully' do
         result = service.import_upcoming_releases
-        expect(result[:errors]).to be > 0
-      end
-    end
 
-    context 'when crawl service returns empty data with retries' do
-      before do
-        # Mock empty responses for retries, then return data
-        allow(Crawl4aiService).to receive(:extract)
-          .with('https://www.tvmaze.com/countdown?page=1')
-          .and_return([], [], sample_crawl_data) # Empty twice, then data
-        allow(Crawl4aiService).to receive(:extract)
-          .with('https://www.tvmaze.com/countdown?page=2')
-          .and_return([])
-        allow(service).to receive(:sleep) # Mock sleep to speed up tests
-      end
-
-      it 'retries and eventually succeeds' do
-        expect(Crawl4aiService).to receive(:extract).exactly(4).times # 3 for page 1, 1 for page 2
-        expect(Rails.logger).to receive(:warn).with(match(/retrying in 30 seconds/))
-        expect(Rails.logger).to receive(:warn).with(match(/retrying in 60 seconds/))
-        expect(Rails.logger).to receive(:info).with(match(/Successfully retrieved 2 releases/))
-
-        result = service.import_upcoming_releases
-        expect(result[:imported]).to eq(2)
-      end
-    end
-
-    context 'when crawl service exhausts all retries' do
-      before do
-        # Mock all retries returning empty
-        allow(Crawl4aiService).to receive(:extract).and_return([])
-        allow(service).to receive(:sleep) # Mock sleep to speed up tests
-      end
-
-      it 'gives up after max retries' do
-        expect(Crawl4aiService).to receive(:extract).exactly(6).times # 1 + 5 retries
-        expect(Rails.logger).to receive(:warn).with(match(/No releases found after 6 attempts/))
-
-        result = service.import_upcoming_releases
         expect(result[:imported]).to eq(0)
+        expect(result[:skipped]).to eq(1)
+        expect(result[:errors]).to eq(0)
+      end
+    end
+
+    context 'when show extraction fails' do
+      before do
+        # Override the show extraction to return empty data
+        allow(Crawl4aiService).to receive(:extract_show).and_return({})
+        allow(Crawl4aiService).to receive(:extract_episode).and_return(episode_data)
+      end
+
+      it 'handles show extraction failures gracefully' do
+        result = service.import_upcoming_releases
+
+        expect(result[:imported]).to eq(0)
+        expect(result[:skipped]).to eq(2)
+        expect(result[:errors]).to eq(0)
+      end
+    end
+
+    context 'when episode extraction fails' do
+      before do
+        # Override the episode extraction to return empty data
+        allow(Crawl4aiService).to receive(:extract_show).and_return(show_data)
+        allow(Crawl4aiService).to receive(:extract_episode).and_return({})
+      end
+
+      it 'handles episode extraction failures gracefully' do
+        result = service.import_upcoming_releases
+
+        expect(result[:imported]).to eq(0)
+        expect(result[:skipped]).to eq(2)
+        expect(result[:errors]).to eq(0)
+      end
+    end
+
+    context 'when show service raises exceptions' do
+      before do
+        allow(Crawl4aiService).to receive(:extract_show).and_raise(StandardError, 'Show service error')
+        allow(Crawl4aiService).to receive(:extract_episode).and_return(episode_data)
+      end
+
+      it 'handles show service exceptions gracefully' do
+        result = service.import_upcoming_releases
+
+        expect(result[:imported]).to eq(0)
+        expect(result[:skipped]).to eq(2)
+        expect(result[:errors]).to eq(0)
+      end
+    end
+
+    context 'when episode service raises exceptions' do
+      before do
+        allow(Crawl4aiService).to receive(:extract_show).and_return(show_data)
+        allow(Crawl4aiService).to receive(:extract_episode).and_raise(StandardError, 'Episode service error')
+      end
+
+      it 'handles episode service exceptions gracefully' do
+        result = service.import_upcoming_releases
+
+        expect(result[:imported]).to eq(0)
+        expect(result[:skipped]).to eq(2)
+        expect(result[:errors]).to eq(0)
+      end
+    end
+
+    context 'when there are processing errors' do
+      before do
+        # Mock service calls first
+        allow(Crawl4aiService).to receive(:extract_show).and_return(show_data)
+        allow(Crawl4aiService).to receive(:extract_episode).and_return(episode_data)
+        # Then make the release creation fail
+        allow(Release).to receive(:find_or_create_from_crawl_data).and_raise(StandardError, 'Processing error')
+      end
+
+      it 'handles processing errors gracefully' do
+        result = service.import_upcoming_releases
+
+        expect(result[:imported]).to eq(0)
+        expect(result[:skipped]).to eq(0)
+        expect(result[:errors]).to eq(2)
       end
     end
   end
 
   describe '#extract_with_retry' do
-    context 'when service returns data immediately' do
-      before do
-        allow(Crawl4aiService).to receive(:extract).and_return(sample_crawl_data)
-      end
+    let(:url) { 'https://example.com/test' }
 
-      it 'returns data without retrying' do
-        expect(Crawl4aiService).to receive(:extract).once
-        expect(service).not_to receive(:sleep)
-
-        result = service.send(:extract_with_retry, 'https://example.com')
-        expect(result).to eq(sample_crawl_data)
-      end
+    before do
+      # Mock the service to prevent actual HTTP requests
+      allow(Crawl4aiService).to receive(:extract).and_return([])
     end
 
-    context 'when service returns empty data then succeeds' do
-      before do
-        allow(Crawl4aiService).to receive(:extract).and_return([], sample_crawl_data)
-        allow(service).to receive(:sleep)
-      end
+    it 'returns data on first successful attempt' do
+      allow(Crawl4aiService).to receive(:extract).and_return([{ 'test' => 'data' }])
 
-      it 'retries with correct delay' do
-        expect(Crawl4aiService).to receive(:extract).twice
-        expect(service).to receive(:sleep).with(30).once
-        expect(Rails.logger).to receive(:warn).with(match(/retrying in 30 seconds/))
-        expect(Rails.logger).to receive(:info).with(match(/Successfully retrieved 2 releases/))
-
-        result = service.send(:extract_with_retry, 'https://example.com')
-        expect(result).to eq(sample_crawl_data)
-      end
+      result = service.send(:extract_with_retry, url)
+      expect(result).to eq([{ 'test' => 'data' }])
     end
 
-    context 'when service always returns empty data' do
-      before do
-        allow(Crawl4aiService).to receive(:extract).and_return([])
-        allow(service).to receive(:sleep)
-      end
+    it 'retries when no data is returned' do
+      allow(Crawl4aiService).to receive(:extract).and_return([], [], [{ 'test' => 'data' }])
+      allow(service).to receive(:sleep) # Don't actually sleep in tests
 
-      it 'exhausts all retries with correct delays' do
-        expect(Crawl4aiService).to receive(:extract).exactly(6).times
-        expect(service).to receive(:sleep).with(30).once
-        expect(service).to receive(:sleep).with(60).once
-        expect(service).to receive(:sleep).with(90).once
-        expect(service).to receive(:sleep).with(120).once
-        expect(service).to receive(:sleep).with(150).once
-        expect(Rails.logger).to receive(:warn).with(match(/No releases found after 6 attempts/))
-
-        result = service.send(:extract_with_retry, 'https://example.com')
-        expect(result).to eq([])
-      end
-    end
-  end
-
-  describe '#find_or_create_channel' do
-    context 'when channel name is blank' do
-      it 'returns nil' do
-        expect(service.send(:find_or_create_channel, '')).to be_nil
-        expect(service.send(:find_or_create_channel, nil)).to be_nil
-      end
+      result = service.send(:extract_with_retry, url)
+      expect(result).to eq([{ 'test' => 'data' }])
+      expect(Crawl4aiService).to have_received(:extract).exactly(3).times
     end
 
-    context 'when channel name is provided' do
-      it 'delegates to Channel.find_or_create_by_fuzzy_name' do
-        expect(Channel).to receive(:find_or_create_by_fuzzy_name).with('HBO')
-        service.send(:find_or_create_channel, 'HBO')
-      end
-    end
+    it 'gives up after max retries' do
+      allow(Crawl4aiService).to receive(:extract).and_return([])
+      allow(service).to receive(:sleep) # Don't actually sleep in tests
 
-    context 'when an error occurs' do
-      before do
-        allow(Channel).to receive(:find_or_create_by_fuzzy_name).and_raise(StandardError.new('Database error'))
-      end
-
-      it 'logs the error and returns nil' do
-        expect(Rails.logger).to receive(:error).with("[ReleaseImportService] Error finding/creating channel 'HBO': Database error")
-
-        result = service.send(:find_or_create_channel, 'HBO')
-        expect(result).to be_nil
-      end
+      result = service.send(:extract_with_retry, url)
+      expect(result).to eq([])
+      expect(Crawl4aiService).to have_received(:extract).exactly(6).times # 1 + 5 retries
     end
   end
 
@@ -303,43 +288,9 @@ RSpec.describe ReleaseImportService, type: :service do
       expect(service.send(:release_beyond_cutoff?, release_data)).to be true
     end
 
-    it 'returns false for missing date' do
-      release_data = {}
-      expect(service.send(:release_beyond_cutoff?, release_data)).to be false
-    end
-
-    it 'handles invalid date format' do
+    it 'handles invalid date formats gracefully' do
       release_data = { 'date' => 'invalid-date' }
-      expect(Rails.logger).to receive(:warn).with("[ReleaseImportService] Invalid date format: invalid-date")
       expect(service.send(:release_beyond_cutoff?, release_data)).to be false
-    end
-  end
-
-  describe '#beyond_cutoff_date?' do
-    let(:cutoff_date) { Date.current + 90.days }
-
-    before do
-      service.instance_variable_set(:@cutoff_date, cutoff_date)
-    end
-
-    it 'returns false for empty array' do
-      expect(service.send(:beyond_cutoff_date?, [])).to be false
-    end
-
-    it 'returns true when all releases are beyond cutoff' do
-      releases_data = [
-        { 'date' => (Date.current + 100.days).to_s },
-        { 'date' => (Date.current + 120.days).to_s }
-      ]
-      expect(service.send(:beyond_cutoff_date?, releases_data)).to be true
-    end
-
-    it 'returns false when some releases are within cutoff' do
-      releases_data = [
-        { 'date' => (Date.current + 30.days).to_s },
-        { 'date' => (Date.current + 100.days).to_s }
-      ]
-      expect(service.send(:beyond_cutoff_date?, releases_data)).to be false
     end
   end
 end

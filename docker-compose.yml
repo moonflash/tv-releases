@@ -41,6 +41,9 @@ services:
       - LITELLM_API_KEY=
       - LITELLM_DEBUG=true
       - LITELLM_VERBOSE=true
+      - LITELLM_REQUEST_TIMEOUT=600
+      - HTTPX_TIMEOUT=600
+      - HTTPCORE_TIMEOUT=600
       - PYTHONUNBUFFERED=1
     volumes:
       - ./crawl4ai.config.yml:/app/config.yml:ro

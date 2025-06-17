@@ -19,6 +19,19 @@ llm:
   validation:
     strict: true
     max_retries: 3
+  request_timeout: 600  # Increased to 600 seconds (10 minutes) for LLM requests
+  timeout: 600          # Additional timeout parameter for HTTP requests
+  # Additional LiteLLM configuration for handling long responses
+  litellm_params:
+    timeout: 600        # LiteLLM timeout
+    request_timeout: 600 # Request timeout
+    api_base: "https://ollama-1.koloit.net/4"
+    drop_params: true   # Drop unsupported parameters
+  # HTTP client configuration
+  http_client:
+    timeout: 600        # HTTP client timeout
+    connect_timeout: 60 # Connection timeout
+    read_timeout: 600   # Read timeout
 # redis:
 #   host: "localhost"
 #   port: 6379
@@ -79,12 +92,14 @@ crawler:
     enabled: true
     base_delay: [1.0, 2.0]
   timeouts:
-    stream_init: 30.0  # Timeout for stream initialization
-    batch_process: 300.0  # Timeout for batch processing
+    stream_init: 120.0  # Increased from 30 to 120 seconds for stream initialization
+    batch_process: 600.0  # Increased from 300 to 600 seconds (10 minutes) for batch processing
+    llm_request: 600.0   # Set LLM request timeout to 600 seconds (10 minutes)
+    http_client: 600.0   # Set HTTP client timeout to 600 seconds (10 minutes)
   pool:
     max_pages: 30
     max_workers: 4
-    timeout: 30
+    timeout: 300  # Increased from 30 to 300 seconds (5 minutes)
     idle_ttl_sec: 1800                     # ← 30 min janitor cutoff
   browser:
     kwargs:
@@ -99,7 +114,7 @@ crawler:
       - "--disable-web-security"
       - "--allow-insecure-localhost"
       - "--ignore-certificate-errors"
-    timeout: 30
+    timeout: 300  # Increased from 30 to 300 seconds (5 minutes)
     wait_time: 5
 
 # Logging Configuration

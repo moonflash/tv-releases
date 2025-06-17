@@ -12,9 +12,7 @@ class Crawl4aiService
       There will be at least 18 releases on the page and you should recognize them all.
       Be aware that date-time will look like this: Jun 16, 2025 at 22:00.
       There will also be announcements for each releases with sometning like "In 7 hours" or "In a day" that you should ignore.
-      Extract url for the release and external_id from the url.
-      Recognize countre form the image url.
-      Episode number and season number will look like 8x01 (8 is episode, season is 1)
+      Extract show_id, episode_id, and network_id from the approproate urls.
 
       Return the list of releases and extract values using the following JSON schema:
 
@@ -25,22 +23,11 @@ class Crawl4aiService
         items: {
           type: "object",
           properties: {
-            date:   { type: "string", format: "date", pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
-            time:   { type: "string", format: "time", pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
-            title:  { type: "string" },
-            channel: { type: "string" },
-            country: { type: "string" },
-            country_code: { type: "string" },
-            external_id: { type: "string" },
-            url: { type: "string" },
-            episode: {
-              type: "object",
-              properties: {
-                number: { type: "number" },
-                season: { type: "number" },
-                title: {  type: "string" }
-              }
-            }
+            date:       { type: "string", format: "date", pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+            time:       { type: "string", format: "time", pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
+            episode_id: { type: "integer" },
+            network_id: { type: "integer" },
+            show_id: { type: "integer" }
           }
         }
       }
@@ -56,8 +43,13 @@ class Crawl4aiService
                             timeout: 300)
 
     ap "[Crawl4aiService] HTTP #{response.code} (#{response.body.bytesize} bytes)"
-
-    return [] unless response.success?
+    
+    # Log the response body for debugging HTTP 500 errors
+    unless response.success?
+      ap "[Crawl4aiService] Error response body: #{response.body}"
+      ap "[Crawl4aiService] Request URL length: #{endpoint.length} characters"
+      return []
+    end
 
     raw_payload = JSON.parse(response.body)
 

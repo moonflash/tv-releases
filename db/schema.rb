@@ -10,9 +10,16 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_06_17_120000) do
+ActiveRecord::Schema[7.2].define(version: 2025_06_17_140301) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "channels", force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_channels_on_name", unique: true
+  end
 
   create_table "releases", force: :cascade do |t|
     t.date "air_date", null: false
@@ -23,6 +30,10 @@ ActiveRecord::Schema[7.2].define(version: 2025_06_17_120000) do
     t.string "episode_title", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "channel_id"
     t.index ["air_date", "air_time"], name: "index_releases_on_air_date_and_air_time"
+    t.index ["channel_id"], name: "index_releases_on_channel_id"
   end
+
+  add_foreign_key "releases", "channels"
 end

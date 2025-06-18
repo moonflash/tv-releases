@@ -133,7 +133,7 @@ It is not adjusted to take all the advantages of carefully collected data and th
 
 ## Production ?
 
-- there is just an simple Github Actions example of how to deploy this code on AWS with DockerSwarm implementation. Since it's not going to production i left Database to be inside Swarm that would otherwise go to RDS...
+- there is just a simple [GitHub Actions example](.github/workflows/production.yml) of how to deploy this code on AWS with a Docker Swarm implementation. Since it's not going to production I left the database inside Swarm, which would otherwise go to RDS...
 
 
 

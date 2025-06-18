@@ -12,15 +12,24 @@ class Release < ApplicationRecord
     air_date = Date.parse(release_data["date"])
     air_time = Time.parse(release_data["time"]).strftime("%H:%M:%S")
 
-    # Find or create network with minimal data (external_id only). The full
-    # details will be fetched asynchronously via ExtractNetworkDataJob.
-    network = Network.find_or_create_by(external_id: release_data["network_id"]) do |n|
-      # Use a generic placeholder. Detailed network data will be populated asynchronously.
-      n.name = "Network #{release_data['network_id']}"
+    network = nil
+    web_channel = nil
+
+    if release_data["network_id"].present?
+      network = Network.find_or_create_by(external_id: release_data["network_id"]) do |n|
+        n.name = "Network #{release_data['network_id']}"
+      end
+    elsif release_data["web_channel_id"].present?
+      web_channel = WebChannel.find_or_create_by(external_id: release_data["web_channel_id"]) do |w|
+        w.name = "WebChannel #{release_data['web_channel_id']}"
+      end
+    else
+      Rails.logger.warn "[Release] No network_id or web_channel_id provided in crawl data: #{release_data.inspect}"
+      return nil
     end
 
     # Find or create show with minimal data
-    show = Show.find_or_create_from_external_id(release_data["show_id"], network)
+    show = Show.find_or_create_from_external_id(release_data["show_id"], network: network, web_channel: web_channel)
     return nil unless show
 
     # Enqueue show data extraction if show is new or incomplete
@@ -62,11 +71,11 @@ class Release < ApplicationRecord
   end
 
   def network
-    episode.show.network
+    episode.show.network || episode.show.web_channel
   end
 
   def country
-    episode.show.network.country
+    episode.show.network&.country
   end
 
   def title

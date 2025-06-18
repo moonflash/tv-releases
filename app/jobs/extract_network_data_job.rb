@@ -1,6 +1,8 @@
 class ExtractNetworkDataJob < ApplicationJob
   queue_as :default
 
+  MAX_RETRIES = 5
+
   def perform(network_id)
     network = Network.find_by(external_id: network_id)
     return unless network
@@ -23,6 +25,11 @@ class ExtractNetworkDataJob < ApplicationJob
       country: country
     )
   rescue => e
-    Rails.logger.error "[ExtractNetworkDataJob] Error extracting network data for network_id #{network_id}: #{e.message}"
+    if executions < MAX_RETRIES
+      Rails.logger.warn "[ExtractNetworkDataJob] Attempt #{executions} failed for network_id #{network_id}: #{e.message}. Retrying (#{executions}/#{MAX_RETRIES})"
+      retry_job wait: 30.seconds
+    else
+      Rails.logger.error "[ExtractNetworkDataJob] Error extracting network data for network_id #{network_id}: #{e.message} (failed after #{MAX_RETRIES} attempts)"
+    end
   end
 end

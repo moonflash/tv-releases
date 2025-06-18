@@ -12,7 +12,7 @@ class Crawl4aiService
       There will be at least 18 releases on the page and you should recognize them all.
       Be aware that date-time will look like this: Jun 16, 2025 at 22:00.
       There will also be announcements for each releases with sometning like "In 7 hours" or "In a day" that you should ignore.
-      Extract show_id, episode_id, and network_id from the approproate urls.
+      Extract show_id, episode_id, and network_id or web_channel_id from the approproate urls.
 
       Return the list of releases and extract values using the following JSON schema:
 
@@ -27,6 +27,7 @@ class Crawl4aiService
             time:       { type: "string", format: "time", pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
             episode_id: { type: "integer" },
             network_id: { type: "integer" },
+            web_channel_id: { type: "integer" },
             show_id: { type: "integer" }
           }
         }
@@ -147,6 +148,32 @@ class Crawl4aiService
     make_crawl_request(url, instruction)
   rescue => e
     ap "Exception while extracting network #{network_id}: #{e.message}"
+    {}
+  end
+
+  def self.extract_web_channel(web_channel_id)
+    url = "https://www.tvmaze.com/webchannels/#{web_channel_id}"
+
+    instruction = <<~INSTRUCTION
+      Extract web channel information from the TVMaze web channel page.
+      Return the web channel data using the following JSON schema:
+
+      schema: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          country_code: { type: "string", pattern: "^[A-Z]{2}$" },
+          time_zone: { type: "string" },
+          official_url: { type: "string" },
+          description: { type: "string" }
+        },
+        required: ["name"]
+      }
+    INSTRUCTION
+
+    make_crawl_request(url, instruction)
+  rescue => e
+    ap "Exception while extracting web channel #{web_channel_id}: #{e.message}"
     {}
   end
 

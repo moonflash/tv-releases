@@ -98,9 +98,12 @@ class ReleaseImportService
           "date" => release_data["date"],
           "time" => release_data["time"],
           "show_id" => release_data["show_id"],
-          "episode_id" => release_data["episode_id"],
-          "network_id" => release_data["network_id"]
+          "episode_id" => release_data["episode_id"]
         }
+
+        # Add channel identifiers if present
+        transformed_data["network_id"] = release_data["network_id"] if release_data["network_id"].present?
+        transformed_data["web_channel_id"] = release_data["web_channel_id"] if release_data["web_channel_id"].present?
 
         # Try to create release using new structure
         result = Release.find_or_create_from_crawl_data(transformed_data)

@@ -9,7 +9,8 @@ RSpec.describe Show, type: :model do
   end
 
   describe 'associations' do
-    it { should belong_to(:network) }
+    it { should belong_to(:network).optional }
+    it { should belong_to(:web_channel).optional }
     it { should have_many(:episodes).dependent(:destroy) }
     it { should have_many(:releases).through(:episodes) }
   end

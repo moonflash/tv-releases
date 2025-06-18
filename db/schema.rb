@@ -10,7 +10,8 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_06_18_150000) do
+# Note: schema.rb updated to reflect latest migrations
+ActiveRecord::Schema[7.2].define(version: 2025_06_19_001000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -85,17 +86,32 @@ ActiveRecord::Schema[7.2].define(version: 2025_06_18_150000) do
     t.text "genres"
     t.decimal "vote", precision: 3, scale: 1
     t.string "external_id", null: false
-    t.bigint "network_id", null: false
+    t.bigint "network_id"
+    t.bigint "web_channel_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index "lower((title)::text)", name: "index_shows_on_lower_title"
     t.index ["external_id"], name: "index_shows_on_external_id", unique: true
     t.index ["network_id"], name: "index_shows_on_network_id"
+    t.index ["web_channel_id"], name: "index_shows_on_web_channel_id"
     t.index ["title"], name: "index_shows_on_title"
+  end
+
+  create_table "web_channels", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "external_id", null: false
+    t.string "time_zone"
+    t.string "official_site_url"
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["external_id"], name: "index_web_channels_on_external_id", unique: true
+    t.index ["name"], name: "index_web_channels_on_name", unique: true
   end
 
   add_foreign_key "episodes", "shows"
   add_foreign_key "networks", "countries"
   add_foreign_key "releases", "episodes"
   add_foreign_key "shows", "networks"
+  add_foreign_key "shows", "web_channels"
 end

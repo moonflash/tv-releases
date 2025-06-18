@@ -1,6 +1,8 @@
 class ExtractShowDataJob < ApplicationJob
   queue_as :default
 
+  MAX_RETRIES = 5
+
   def perform(show_id)
     show = Show.find_by(external_id: show_id)
     return unless show
@@ -17,6 +19,11 @@ class ExtractShowDataJob < ApplicationJob
       vote: show_data["vote"]
     )
   rescue => e
-    Rails.logger.error "[ExtractShowDataJob] Error extracting show data for show_id #{show_id}: #{e.message}"
+    if executions < MAX_RETRIES
+      Rails.logger.warn "[ExtractShowDataJob] Attempt #{executions} failed for show_id #{show_id}: #{e.message}. Retrying (#{executions}/#{MAX_RETRIES})"
+      retry_job wait: 30.seconds
+    else
+      Rails.logger.error "[ExtractShowDataJob] Error extracting show data for show_id #{show_id}: #{e.message} (failed after #{MAX_RETRIES} attempts)"
+    end
   end
 end

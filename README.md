@@ -30,27 +30,33 @@ due to the lack of time to investigate it's capabilities, Crawl4ai service is se
 
 See [CRON_SETUP.md](CRON_SETUP.md) for instructions on setting up daily automated imports.
 
-## Development
+## Database Schema
 
-Things you may want to cover:
+Below is a high-level entity-relationship diagram (ERD) of the persistent models used by TV Releases.  
+(The diagram is kept in ASCII so it renders everywhere – feel free to regenerate with your favourite ERD tool if you prefer a PNG.)
 
-* Ruby version
-
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+```text
++-----------+     1          * +-----------+
+| countries |------------------| networks  |
++-----------+                  +-----------+
+       ^                             |
+       |                             | 1
+       |                             |                     1        *
+       |                         *   v   1         +-----------+         +-----------+
+       |                     +-----------+---------|  shows    |---------| episodes  |
+       |                     |           |         +-----------+         +-----------+
+       |                     | 1         | *                | 1               | *
+       |                     v           |                  |                 |
+       |               +-----------+     |                  |                 |
+       |               | releases  |<----+------------------+                 |
+       |               +-----------+                                        |
+       |                                                                    |
+       +--------------------------------------------------------------------+
+                        Each `release` belongs to an `episode`, which in turn
+                        belongs to a `show`. A `show` is broadcast on a
+                        `network`, and each `network` may optionally be linked
+                        to a `country`.
+```
 
 ## Docker Development Setup
 
@@ -132,32 +138,6 @@ It is not adjusted to take all the advantages of carefully collected data and th
 # Final words
 It took me 8 hours to build this and as much as i hurts to "ship" something that is almost unusable I have to stop and present you what's done  :) 
 
-## Database Schema
 
-Below is a high-level entity-relationship diagram (ERD) of the persistent models used by TV Releases.  
-(The diagram is kept in ASCII so it renders everywhere – feel free to regenerate with your favourite ERD tool if you prefer a PNG.)
-
-```text
-+-----------+     1          * +-----------+
-| countries |------------------| networks  |
-+-----------+                  +-----------+
-       ^                             |
-       |                             | 1
-       |                             |                     1        *
-       |                         *   v   1         +-----------+         +-----------+
-       |                     +-----------+---------|  shows    |---------| episodes  |
-       |                     |           |         +-----------+         +-----------+
-       |                     | 1         | *                | 1               | *
-       |                     v           |                  |                 |
-       |               +-----------+     |                  |                 |
-       |               | releases  |<----+------------------+                 |
-       |               +-----------+                                        |
-       |                                                                    |
-       +--------------------------------------------------------------------+
-                        Each `release` belongs to an `episode`, which in turn
-                        belongs to a `show`. A `show` is broadcast on a
-                        `network`, and each `network` may optionally be linked
-                        to a `country`.
-```
 
 

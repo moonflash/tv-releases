@@ -159,14 +159,16 @@ const ReleasesPage = () => {
     return (
       <ul className="releases-list">
         {releases.map((rel) => {
-          const channel = rel.episode.show.channel;
+          const { network, web_channel: webChannel } = rel.episode.show;
+          const channel = network || webChannel;
+
           return (
             <li key={rel.id} className="release-item">
               <strong>{rel.episode.show.title}</strong> — S{rel.episode.season_number}E{rel.episode.episode_number} —{' '}
               {rel.air_date} {rel.air_time}
               <br />
-              {channel.channel_type === 'network' ? (
-                <>Network: {channel.name} ({channel.country.shortcode})</>
+              {network ? (
+                <>Network: {channel.name}{channel.country ? ` (${channel.country.shortcode})` : ''}</>
               ) : (
                 <>Web Channel: {channel.name}</>
               )}

@@ -8,18 +8,23 @@ For detailed information about the TV releases import system, see the [Developme
 
 ## Quick Start
 
-### Import TV Releases
+### STEPS:
 
 ```bash
-# Import upcoming releases only
-rake releases:import
+# build rails image
+ docker compose -f docker-compose.dev.yml build --no-cache web
 
-# Clean up old releases only  
-rake releases:cleanup
+# start services without worker
+docker compose -f docker-compose.dev.yml up --scale worker=0
 
-# Run both import and cleanup
-rake releases:maintain
+# Run import script
+docker exec -it tv-releases-web-1 bundle exec rake releases:import
+
+#  only after import script finished run workers
+docker compose -f docker-compose.dev.yml up --scale worker=4
 ```
+### IMPORTANT!
+due to the lack of time to investigate it's capabilities, Crawl4ai service is set to be only single threaded. Because of that we are firstly importing releases and only after that we run workers that will call Show/Network/Episodes endpoints to scrape data. Documentation suggests that it can be multithreaded and with Crawl4ai properly set we should have unlimited parallel processes to handle import much faster.
 
 ### Setup Daily Automation
 
@@ -118,7 +123,7 @@ It is not adjusted to take all the advantages of carefully collected data and th
 
 ## Production ?
 
-- there is just an simple Github Actions example of how to deploy this code on AWS with DockerSwarm implementation.
+- there is just an simple Github Actions example of how to deploy this code on AWS with DockerSwarm implementation. Since it's not going to production i left Database to be inside Swarm that would otherwise go to RDS...
 
 
 

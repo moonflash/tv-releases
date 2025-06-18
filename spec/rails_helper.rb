@@ -5,6 +5,8 @@ require_relative '../config/environment'
 # Prevent database truncation if the environment is production
 abort("The Rails environment is running in production mode!") if Rails.env.production?
 require 'rspec/rails'
+require 'shoulda/matchers'
+require 'factory_bot'
 # Add additional requires below this line. Rails is not loaded until this point!
 
 # Requires supporting ruby files with custom matchers and macros, etc, in
@@ -22,16 +24,46 @@ require 'rspec/rails'
 #
 # Rails.root.glob('spec/support/**/*.rb').sort_by(&:to_s).each { |f| require f }
 
-# Skip database setup since specs don't need ActiveRecord for service object
-# If you later add model specs, re-enable these lines and ensure test DB exists.
-# begin
-#   ActiveRecord::Migration.maintain_test_schema!
-# rescue ActiveRecord::PendingMigrationError => e
-#   abort e.to_s.strip
-# end
+# Enable ActiveRecord support and maintain test schema
+begin
+  ActiveRecord::Migration.maintain_test_schema!
+rescue ActiveRecord::PendingMigrationError => e
+  abort e.to_s.strip
+end
+
 RSpec.configure do |config|
-  # Disable ActiveRecord support for now (no DB needed)
-  config.use_active_record = false
+  config.use_active_record = true
+
+  # FactoryBot configuration
+  config.include FactoryBot::Syntax::Methods
+
+  # Run jobs inline during tests
+  config.before(:each) do
+    ActiveJob::Base.queue_adapter = :test
+  end
+
+  # Include ActiveJob::TestHelper to enable perform_enqueued_jobs
+  config.include ActiveJob::TestHelper
+
+  # DatabaseCleaner configuration
+  config.before(:suite) do
+    DatabaseCleaner.clean_with(:truncation)
+    DatabaseCleaner.strategy = :transaction
+  end
+
+  config.around(:each) do |example|
+    DatabaseCleaner.cleaning do
+      example.run
+    end
+  end
+
+  # Shoulda Matchers configuration
+  Shoulda::Matchers.configure do |shoulda_config|
+    shoulda_config.integrate do |with|
+      with.test_framework :rspec
+      with.library :rails
+    end
+  end
 
   # RSpec Rails can automatically mix in different behaviours to your tests
   # based on their file location, for example enabling you to call `get` and

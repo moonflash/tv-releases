@@ -1,11 +1,11 @@
 class Country < ApplicationRecord
-  has_many :networks, dependent: :nullify
+  has_many :networks, dependent: :destroy
   has_many :shows, through: :networks
   has_many :episodes, through: :shows
   has_many :releases, through: :episodes
 
   validates :name, presence: true
-  validates :shortcode, presence: true, uniqueness: true
+  validates :shortcode, presence: true, uniqueness: { case_sensitive: false }
 
   def self.find_or_create_by_shortcode(shortcode, name = nil)
     return nil if shortcode.blank?

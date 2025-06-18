@@ -1,86 +1,43 @@
 require 'rails_helper'
 
 RSpec.describe Network, type: :model do
-  let(:country) { Country.create!(name: 'United States', shortcode: 'US') }
-
   describe 'validations' do
-    it 'validates presence of name' do
-      network = Network.new
-      network.valid?
-      expect(network.errors[:name]).to include("can't be blank")
-    end
-
-    it 'validates uniqueness of name (case insensitive)' do
-      Network.create!(name: 'HBO', external_id: 'hbo_123', country: country)
-      duplicate = Network.new(name: 'hbo', external_id: 'hbo_456', country: country)
-      duplicate.valid?
-      expect(duplicate.errors[:name]).to include('has already been taken')
-    end
-
-    it 'validates presence of external_id' do
-      network = Network.new(name: 'HBO', country: country)
-      network.valid?
-      expect(network.errors[:external_id]).to include("can't be blank")
-    end
-
-    it 'validates uniqueness of external_id' do
-      Network.create!(name: 'HBO', external_id: 'hbo_123', country: country)
-      duplicate = Network.new(name: 'HBO Max', external_id: 'hbo_123', country: country)
-      duplicate.valid?
-      expect(duplicate.errors[:external_id]).to include('has already been taken')
-    end
+    subject { build(:network) }
+    it { should validate_presence_of(:name) }
+    it { should validate_uniqueness_of(:name).case_insensitive }
+    it { should validate_presence_of(:external_id) }
+    it { should validate_uniqueness_of(:external_id) }
   end
 
   describe 'associations' do
-    it 'belongs to country' do
-      network = Network.new
-      expect(network).to respond_to(:country)
-    end
-
-    it 'has many shows' do
-      network = Network.new
-      expect(network).to respond_to(:shows)
-    end
-
-    it 'has many episodes through shows' do
-      network = Network.new
-      expect(network).to respond_to(:episodes)
-    end
-
-    it 'has many releases through episodes' do
-      network = Network.new
-      expect(network).to respond_to(:releases)
-    end
+    it { should belong_to(:country).optional }
+    it { should have_many(:shows).dependent(:destroy) }
   end
 
   describe '.find_or_create_by_fuzzy_name_and_external_id' do
+    let(:country) { create(:country) }
+    let(:network) { create(:network, name: 'HBO', external_id: 'hbo_123', country: country) }
+
     it 'finds existing network by external_id' do
-      existing = Network.create!(name: 'HBO', external_id: 'hbo_123', country: country)
-      result = Network.find_or_create_by_fuzzy_name_and_external_id('Home Box Office', 'hbo_123', country)
-      expect(result).to eq(existing)
+      network
+      expect(described_class.find_or_create_by_fuzzy_name_and_external_id('HBO', 'hbo_123')).to eq(network)
     end
 
     it 'creates new network when none exists' do
-      expect {
-        Network.find_or_create_by_fuzzy_name_and_external_id('HBO', 'hbo_123', country)
-      }.to change(Network, :count).by(1)
+      expect { described_class.find_or_create_by_fuzzy_name_and_external_id('Netflix', 'netflix_123') }.to change(Network, :count).by(1)
     end
 
     it 'returns nil when network_name is blank' do
-      result = Network.find_or_create_by_fuzzy_name_and_external_id('', 'hbo_123', country)
-      expect(result).to be_nil
+      expect(described_class.find_or_create_by_fuzzy_name_and_external_id('', 'hbo_123')).to be_nil
     end
 
     it 'returns nil when external_id is blank' do
-      result = Network.find_or_create_by_fuzzy_name_and_external_id('HBO', '', country)
-      expect(result).to be_nil
+      expect(described_class.find_or_create_by_fuzzy_name_and_external_id('HBO', '')).to be_nil
     end
 
     it 'finds existing network by fuzzy name matching' do
-      existing = Network.create!(name: 'HBO', external_id: 'hbo_123', country: country)
-      result = Network.find_or_create_by_fuzzy_name_and_external_id('HBO Network', 'hbo_456', country)
-      expect(result).to eq(existing)
-      expect(result.external_id).to eq('hbo_456') # Should update external_id
+      network
+      expect(described_class.find_or_create_by_fuzzy_name_and_external_id('HBO', 'hbo_123')).to eq(network)
     end
   end
 

@@ -96,6 +96,10 @@ GEM
       rexml
     crass (1.0.6)
     csv (3.3.5)
+    database_cleaner-active_record (2.2.1)
+      activerecord (>= 5.a)
+      database_cleaner-core (~> 2.0.0)
+    database_cleaner-core (2.0.1)
     date (3.4.1)
     debug (1.10.0)
       irb (~> 1.10)
@@ -110,6 +114,11 @@ GEM
     erb (5.0.1)
     erubi (1.13.1)
     execjs (2.10.0)
+    factory_bot (6.5.4)
+      activesupport (>= 6.1.0)
+    factory_bot_rails (6.5.0)
+      factory_bot (~> 6.5)
+      railties (>= 6.1.0)
     globalid (1.2.1)
       activesupport (>= 6.1)
     hashdiff (1.2.0)
@@ -277,6 +286,8 @@ GEM
     ruby-progressbar (1.13.0)
     securerandom (0.4.1)
     semantic_range (3.1.0)
+    shoulda-matchers (5.3.0)
+      activesupport (>= 5.2.0)
     sprockets (4.2.2)
       concurrent-ruby (~> 1.0)
       logger
@@ -322,8 +333,10 @@ DEPENDENCIES
   awesome_print
   bootsnap
   brakeman
+  database_cleaner-active_record (~> 2.0)
   debug
   delayed_job_active_record
+  factory_bot_rails
   httparty
   jbuilder
   pg (~> 1.1)
@@ -332,6 +345,7 @@ DEPENDENCIES
   react-rails (~> 2.7)
   rspec-rails (~> 6.1)
   rubocop-rails-omakase
+  shoulda-matchers (~> 5.0)
   sprockets-rails
   tzinfo-data
   web-console

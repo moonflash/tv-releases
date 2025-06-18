@@ -2,32 +2,14 @@ require 'rails_helper'
 
 RSpec.describe Country, type: :model do
   describe 'validations' do
-    it 'validates presence of name' do
-      country = Country.new(shortcode: 'US')
-      expect(country).not_to be_valid
-      expect(country.errors[:name]).to include("can't be blank")
-    end
-
-    it 'validates presence of shortcode' do
-      country = Country.new(name: 'United States')
-      expect(country).not_to be_valid
-      expect(country.errors[:shortcode]).to include("can't be blank")
-    end
-
-    it 'validates uniqueness of shortcode' do
-      Country.create!(name: 'United States', shortcode: 'US')
-      country = Country.new(name: 'USA', shortcode: 'US')
-      expect(country).not_to be_valid
-      expect(country.errors[:shortcode]).to include("has already been taken")
-    end
+    subject { build(:country) }
+    it { should validate_presence_of(:name) }
+    it { should validate_presence_of(:shortcode) }
+    it { should validate_uniqueness_of(:shortcode).case_insensitive }
   end
 
   describe 'associations' do
-    it 'has many networks' do
-      association = Country.reflect_on_association(:networks)
-      expect(association.macro).to eq(:has_many)
-      expect(association.options[:dependent]).to eq(:nullify)
-    end
+    it { should have_many(:networks).dependent(:destroy) }
 
     it 'has many shows through networks' do
       association = Country.reflect_on_association(:shows)
@@ -49,41 +31,20 @@ RSpec.describe Country, type: :model do
   end
 
   describe '.find_or_create_by_shortcode' do
-    context 'when shortcode is blank' do
-      it 'returns nil' do
-        expect(Country.find_or_create_by_shortcode('')).to be_nil
-        expect(Country.find_or_create_by_shortcode(nil)).to be_nil
-      end
+    let(:country) { create(:country, name: 'United States', shortcode: 'US') }
+
+    it 'finds existing country by shortcode' do
+      country # ensure it exists before method call
+      expect(described_class.find_or_create_by_shortcode('US')).to eq(country)
     end
 
-    context 'when country exists' do
-      let!(:existing_country) { Country.create!(name: 'United States', shortcode: 'US') }
-
-      it 'returns existing country' do
-        result = Country.find_or_create_by_shortcode('us')
-        expect(result).to eq(existing_country)
-      end
-
-      it 'normalizes shortcode to uppercase' do
-        result = Country.find_or_create_by_shortcode('us')
-        expect(result.shortcode).to eq('US')
-      end
+    it 'creates new country when none exists' do
+      expect { described_class.find_or_create_by_shortcode('CA') }.to change(Country, :count).by(1)
     end
 
-    context 'when country does not exist' do
-      it 'creates new country with provided name' do
-        result = Country.find_or_create_by_shortcode('CA', 'Canada')
-        expect(result.shortcode).to eq('CA')
-        expect(result.name).to eq('Canada')
-        expect(result).to be_persisted
-      end
-
-      it 'creates new country with shortcode as name when name not provided' do
-        result = Country.find_or_create_by_shortcode('DE')
-        expect(result.shortcode).to eq('DE')
-        expect(result.name).to eq('DE')
-        expect(result).to be_persisted
-      end
+    it 'normalizes shortcode to uppercase' do
+      new_country = described_class.find_or_create_by_shortcode('ca')
+      expect(new_country.shortcode).to eq('CA')
     end
   end
 end

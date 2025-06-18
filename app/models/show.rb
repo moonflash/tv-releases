@@ -1,9 +1,10 @@
 class Show < ApplicationRecord
   belongs_to :network
   has_many :episodes, dependent: :destroy
+  has_many :releases, through: :episodes
 
   validates :external_id, presence: true, uniqueness: true
-  validates :title, presence: true, if: :persisted?
+  validates :title, presence: true, on: :update
 
   def self.find_or_create_from_external_id(external_id, network)
     return nil if external_id.blank?

@@ -3,8 +3,8 @@ class Episode < ApplicationRecord
   has_many :releases, dependent: :destroy
 
   validates :external_id, presence: true, uniqueness: true
-  validates :season_number, :episode_number, presence: true, if: :persisted?
-  validates :season_number, :episode_number, uniqueness: { scope: :show_id }, if: :persisted?
+  validates :season_number, :episode_number, presence: true, on: :update
+  validates :season_number, :episode_number, uniqueness: { scope: :show_id }, on: :update
 
   def self.find_or_create_from_external_id(external_id, show)
     return nil if external_id.blank?
@@ -24,6 +24,7 @@ class Episode < ApplicationRecord
   end
 
   def title
+    return "TBD" if season_number.zero? || episode_number.zero?
     "S#{season_number.to_s.rjust(2, '0')}E#{episode_number.to_s.rjust(2, '0')}"
   end
 end 

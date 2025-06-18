@@ -76,7 +76,8 @@ class ReleaseImportService
       delay = BASE_RETRY_DELAY * (retries + 1)
       Rails.logger.warn "[ReleaseImportService] No releases found for #{url}, retrying in #{delay} seconds (attempt #{retries + 1}/#{MAX_RETRIES + 1})"
 
-      sleep(delay)
+      # Skip actual sleep in test environment to keep the test suite fast
+      sleep(delay) unless Rails.env.test?
       retries += 1
     end
   end

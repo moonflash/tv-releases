@@ -19,21 +19,28 @@ The platform ingests upcoming TV releases from TVMaze.com for the next 90 days, 
    • Validations on `name` & `external_id` uniqueness  
    • Automatic name normalisation – strips *"TV / Network / Channel"* etc. and handles special cases (HBO, BBC…)
 
-3. **Show (`app/models/show.rb`)**
-   • Belongs to **Network**  
-   • Has many **Episodes** and **Releases**  
-   • `find_or_create_from_external_id` builds stub records and triggers async metadata extraction
+3. **WebChannel (`app/models/web_channel.rb`)**
+   • Represents streaming-only channels (Netflix, Disney+, etc.)  
+   • Has many **Shows / Episodes / Releases** (through associations)  
+   • Validations on `name` & `external_id` uniqueness  
+   • Before-save callback normalises the display name (`titleize`).
 
-4. **Episode (`app/models/episode.rb`)**
+4. **Show (`app/models/show.rb`)**
+   • Belongs to **Network** *or* **WebChannel** (one of them is required)  
+   • Has many **Episodes** and **Releases**  
+   • Validation ensures presence of at least one parent (network/web channel)  
+   • `find_or_create_from_external_id` builds stub records and queues metadata extraction (network or web-channel specific).
+
+5. **Episode (`app/models/episode.rb`)**
    • Belongs to **Show**  
    • Has many **Releases**  
    • Validations ensure `(season_number, episode_number)` uniqueness per show once details are fetched  
    • Helper `title` returns `S01E05`-style label
 
-5. **Release (`app/models/release.rb`)**
+6. **Release (`app/models/release.rb`)**
    • Belongs to **Episode**  
    • Scopes: `upcoming`, `within_days(n)`  
-   • `find_or_create_from_crawl_data` orchestrates minimal network / show / episode stub creation and queues extraction jobs. Duplicate releases (same episode + air date/time) are skipped.
+   • `find_or_create_from_crawl_data` orchestrates minimal network/web-channel → show → episode stub creation and queues extraction jobs. Duplicate releases (same episode + air date/time) are skipped.
 
 
 
@@ -46,6 +53,7 @@ The platform ingests upcoming TV releases from TVMaze.com for the next 90 days, 
 | `ExtractNetworkDataJob` | Fetches full network meta-data (timezone, description, official URL, country) |
 | `ExtractShowDataJob`    | Enriches stub shows with title, genres, vote, etc. |
 | `ExtractEpisodeDataJob` | Populates season / episode numbers, runtime, summary |
+| `ExtractWebChannelDataJob` | Fetches web-channel meta-data (description, timezone, official URL) |
 
 All jobs rely on `Crawl4aiService` and log non-fatal failures without interrupting the import pipeline.
 
@@ -65,8 +73,9 @@ All jobs rely on `Crawl4aiService` and log non-fatal failures without interrupti
 
 1. `GET /api/v1/countries` – optional `q` param (case-insensitive search)
 2. `GET /api/v1/networks` – filters: `country`, `q`
-3. `GET /api/v1/releases` – filters & pagination:
-   • `country`, `network`, `start_date`, `end_date`, `q`  
+3. `GET /api/v1/web_channels` – optional `q` param (case-insensitive search)
+4. `GET /api/v1/releases` – filters & pagination:
+   • `country`, `network`, `web_channel`, `start_date`, `end_date`, `q`  
    • `page` & `per_page` (capped at 100)
 
 Responses are plain JSON produced by a hand-rolled serializer (no ActiveModelSerializers dependency).
@@ -116,7 +125,7 @@ Foreign keys cascade deletes from top → bottom (country → network → show �
 
 * **Models:** country (8), network (15), show (10), episode (10), release (12)
 * **Services:** ReleaseImportService (20)
-* **Jobs:** extraction jobs (9)
+* **Jobs:** extraction jobs (10)
 * **Controllers (requests):** API V1 (12)
 * **Rake tasks:** releases tasks (6)
 

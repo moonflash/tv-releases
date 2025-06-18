@@ -30,7 +30,7 @@ gem "bootsnap", require: false
 
 # Use Webpacker + React
 gem "webpacker", "~> 5.4"
-gem "react-rails", "~> 2.7"
+gem "react-rails", "~> 3.2"
 
 # Background job processing
 gem "delayed_job_active_record"

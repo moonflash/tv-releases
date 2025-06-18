@@ -11,7 +11,7 @@ RSpec.describe ReleaseImportService, type: :service do
 
     before do
       allow(Crawl4aiService).to receive(:extract).and_return([
-        { 'date' => '2025-06-17', 'time' => '20:00', 'show_id' => show.external_id, 'episode_id' => episode.external_id, 'network_id' => network.external_id, 'network_name' => network.name }
+        { 'date' => '2025-06-17', 'time' => '20:00', 'show_id' => show.external_id, 'episode_id' => episode.external_id, 'network_id' => network.external_id }
       ], [])
     end
 

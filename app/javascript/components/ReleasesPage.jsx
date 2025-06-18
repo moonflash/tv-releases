@@ -21,16 +21,17 @@ const ReleasesPage = () => {
       .catch((err) => console.error('Failed to fetch countries', err));
   }, []);
 
-  // Fetch networks when country filter changes
+  // Fetch networks when component mounts or when the country filter changes.
+  // If a country is selected we fetch networks filtered by that country, otherwise we fetch all networks.
   useEffect(() => {
-    if (filters.country) {
-      fetch(`/api/v1/networks?country=${encodeURIComponent(filters.country)}`)
-        .then((res) => res.json())
-        .then((data) => setNetworks(data))
-        .catch((err) => console.error('Failed to fetch networks', err));
-    } else {
-      setNetworks([]);
-    }
+    const url = filters.country
+      ? `/api/v1/networks?country=${encodeURIComponent(filters.country)}`
+      : '/api/v1/networks';
+
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => setNetworks(data))
+      .catch((err) => console.error('Failed to fetch networks', err));
   }, [filters.country]);
 
   // Fetch releases whenever filters change
@@ -91,7 +92,6 @@ const ReleasesPage = () => {
           name="network"
           value={filters.network}
           onChange={handleInputChange}
-          disabled={!networks.length}
         >
           <option value="">All</option>
           {networks.map((n) => (

@@ -15,8 +15,8 @@ class Release < ApplicationRecord
     # Find or create network with minimal data (external_id only). The full
     # details will be fetched asynchronously via ExtractNetworkDataJob.
     network = Network.find_or_create_by(external_id: release_data["network_id"]) do |n|
-      # Provide a temporary placeholder name to satisfy validations.
-      n.name = release_data["network_name"].presence || "Network #{release_data['network_id']}"
+      # Use a generic placeholder. Detailed network data will be populated asynchronously.
+      n.name = "Network #{release_data['network_id']}"
     end
 
     # Find or create show with minimal data

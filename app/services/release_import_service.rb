@@ -35,6 +35,7 @@ class ReleaseImportService
       # Check if we've gone beyond our cutoff date
       break if beyond_cutoff_date?(releases_data)
 
+      ap releases_data
       process_releases(releases_data)
 
       page += 1
@@ -85,6 +86,10 @@ class ReleaseImportService
   def process_releases(releases_data)
     releases_data.each do |release_data|
       begin
+        # Remove optional keys we no longer use to ensure the application
+        # never depends on them.
+        release_data.delete("network_name") if release_data.is_a?(Hash)
+
         # Skip if release is beyond our cutoff date
         next if release_beyond_cutoff?(release_data)
 
@@ -94,8 +99,7 @@ class ReleaseImportService
           "time" => release_data["time"],
           "show_id" => release_data["show_id"],
           "episode_id" => release_data["episode_id"],
-          "network_id" => release_data["network_id"],
-          "network_name" => release_data["network_name"] || "Unknown Network"
+          "network_id" => release_data["network_id"]
         }
 
         # Try to create release using new structure

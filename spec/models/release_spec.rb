@@ -44,8 +44,7 @@ RSpec.describe Release, type: :model do
         'time' => '20:00',
         'show_id' => 'show_456',
         'episode_id' => 'ep_456',
-        'network_id' => 'net_456',
-        'network_name' => 'Netflix'
+        'network_id' => 'net_456'
       }
     end
 

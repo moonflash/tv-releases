@@ -78,11 +78,13 @@ RSpec.describe Release, type: :model do
         .and change(Show, :count).by(1)
         .and change(Episode, :count).by(1)
         .and change(Release, :count).by(1)
+
+      expect(ExtractNetworkDataJob).to have_been_enqueued.with('net_456')
     end
 
     it 'creates release with correct attributes' do
       release = Release.find_or_create_from_crawl_data(crawl_data)
-      
+
       expect(release.air_date).to eq(Date.parse('2025-06-15'))
       expect(release.air_time.strftime('%H:%M:%S')).to eq('20:00:00')
     end
@@ -90,7 +92,7 @@ RSpec.describe Release, type: :model do
     it 'finds existing release instead of creating duplicate' do
       # Create the release first time
       first_release = Release.find_or_create_from_crawl_data(crawl_data)
-      
+
       # Try to create again with same data
       expect {
         second_release = Release.find_or_create_from_crawl_data(crawl_data)

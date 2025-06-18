@@ -24,7 +24,11 @@ RSpec.describe Show, type: :model do
     end
 
     it 'creates new show when none exists' do
-      expect { described_class.find_or_create_from_external_id('456', network) }.to change(Show, :count).by(1)
+      expect {
+        described_class.find_or_create_from_external_id('456', network)
+      }.to change(Show, :count).by(1)
+
+      expect(ExtractNetworkDataJob).to have_been_enqueued.with(network.external_id)
     end
 
     it 'creates show with correct attributes' do
@@ -56,4 +60,4 @@ RSpec.describe Show, type: :model do
       }.not_to raise_error
     end
   end
-end 
+end

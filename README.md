@@ -37,30 +37,36 @@ See [CRON_SETUP.md](CRON_SETUP.md) for instructions on setting up daily automate
 ## Database Schema
 
 Below is a high-level entity-relationship diagram (ERD) of the persistent models used by TV Releases.  
-(The diagram is kept in ASCII so it renders everywhere – feel free to regenerate with your favourite ERD tool if you prefer a PNG.)
+
 
 ```text
-+-----------+     1          * +-----------+
-| countries |------------------| networks  |
-+-----------+                  +-----------+
-       ^                             |
-       |                             | 1
-       |                             |                     1        *
-       |                         *   v   1         +-----------+         +-----------+
-       |                     +-----------+---------|  shows    |---------| episodes  |
-       |                     |           |         +-----------+         +-----------+
-       |                     | 1         | *                | 1               | *
-       |                     v           |                  |                 |
-       |               +-----------+     |                  |                 |
-       |               | releases  |<----+------------------+                 |
-       |               +-----------+                                        |
-       |                                                                    |
-       +--------------------------------------------------------------------+
-                        Each `release` belongs to an `episode`, which in turn
-                        belongs to a `show`. A `show` is broadcast on a
-                        `network`, and each `network` may optionally be linked
-                        to a `country`.
++-----------+     1        *  +-----------+
+| countries |-----------------| networks  |
++-----------+                 +-----------+
+                                  | 0..1
+                                  v
+                             +-----------+
+                             |  shows    |
++-----------+     *      0..1 +-----------+
+| web_chan- |-----------------|
+| nels      |                 |
++-----------+                 |
+                              | 1        *
+                              v
+                         +-----------+
+                         | episodes  |
+                         +-----------+
+                              | 1        *
+                              v
+                         +-----------+
+                         | releases  |
+                         +-----------+
 ```
+
+                        Each `release` belongs to an `episode`, which in turn
+                        belongs to a `show`. A `show` is broadcast either on a
+                        traditional `network` (optionally linked to a `country`) or on a
+                        `web_channel` (for streaming services).
 
 ## Docker Development Setup
 

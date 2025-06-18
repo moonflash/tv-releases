@@ -3,9 +3,11 @@ import React, { useEffect, useState } from 'react';
 const ReleasesPage = () => {
   const [countries, setCountries] = useState([]);
   const [networks, setNetworks] = useState([]);
+  const [webChannels, setWebChannels] = useState([]);
   const [filters, setFilters] = useState({
     country: '',
     network: '',
+    web_channel: '',
     start_date: '',
     end_date: ''
   });
@@ -34,6 +36,14 @@ const ReleasesPage = () => {
       .catch((err) => console.error('Failed to fetch networks', err));
   }, [filters.country]);
 
+  // Fetch web channels on mount
+  useEffect(() => {
+    fetch('/api/v1/web_channels')
+      .then((res) => res.json())
+      .then((data) => setWebChannels(data))
+      .catch((err) => console.error('Failed to fetch web channels', err));
+  }, []);
+
   // Fetch releases whenever filters change
   useEffect(() => {
     fetchReleases();
@@ -47,6 +57,7 @@ const ReleasesPage = () => {
     const params = new URLSearchParams();
     if (filters.country) params.append('country', filters.country);
     if (filters.network) params.append('network', filters.network);
+    if (filters.web_channel) params.append('web_channel', filters.web_channel);
     if (filters.start_date) params.append('start_date', filters.start_date);
     if (filters.end_date) params.append('end_date', filters.end_date);
     params.append('per_page', '100');
@@ -103,6 +114,22 @@ const ReleasesPage = () => {
       </label>
 
       <label>
+        Web Channel:
+        <select
+          name="web_channel"
+          value={filters.web_channel}
+          onChange={handleInputChange}
+        >
+          <option value="">All</option>
+          {webChannels.map((wc) => (
+            <option key={wc.id} value={wc.id}>
+              {wc.name}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label>
         From:
         <input
           type="date"
@@ -131,14 +158,21 @@ const ReleasesPage = () => {
 
     return (
       <ul className="releases-list">
-        {releases.map((rel) => (
-          <li key={rel.id} className="release-item">
-            <strong>{rel.episode.show.title}</strong> — S{rel.episode.season_number}E{rel.episode.episode_number} —{' '}
-            {rel.air_date} {rel.air_time}
-            <br />
-            Network: {rel.episode.show.network.name} ({rel.episode.show.network.country.shortcode})
-          </li>
-        ))}
+        {releases.map((rel) => {
+          const channel = rel.episode.show.channel;
+          return (
+            <li key={rel.id} className="release-item">
+              <strong>{rel.episode.show.title}</strong> — S{rel.episode.season_number}E{rel.episode.episode_number} —{' '}
+              {rel.air_date} {rel.air_time}
+              <br />
+              {channel.channel_type === 'network' ? (
+                <>Network: {channel.name} ({channel.country.shortcode})</>
+              ) : (
+                <>Web Channel: {channel.name}</>
+              )}
+            </li>
+          );
+        })}
       </ul>
     );
   };

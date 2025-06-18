@@ -17,6 +17,7 @@ Rails.application.routes.draw do
       resources :releases, only: [ :index ]
       resources :countries, only: [ :index ]
       resources :networks,  only: [ :index ]
+      resources :web_channels, only: [ :index ]
     end
   end
 end

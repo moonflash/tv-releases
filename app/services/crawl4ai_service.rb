@@ -77,6 +77,7 @@ class Crawl4aiService
 
     instruction = <<~INSTRUCTION
       Extract show information from the TVMaze show page.
+      Extract network_id or web_channel_id (it's never both) from the approproate urls.
       Return the show data using the following JSON schema:
 
       schema: {
@@ -85,6 +86,8 @@ class Crawl4aiService
           title: { type: "string" },
           description: { type: "string" },
           show_type: { type: "string" },
+          network_id: { type: "integer" },
+          web_channel_id: { type: "integer" },
           official_site_url: { type: "string" },
           genres: { type: "array", items: { type: "string" } },
           vote: { type: "number", minimum: 0, maximum: 10 }

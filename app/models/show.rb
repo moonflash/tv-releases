@@ -46,6 +46,12 @@ class Show < ApplicationRecord
     nil
   end
 
+  # Sync this show with data fetched from Crawl4aiService.
+  # Wrapper around ShowSyncService.sync(self).
+  def sync_from_crawl!
+    ShowSyncService.sync(self)
+  end
+
   private
 
   def network_or_web_channel_present

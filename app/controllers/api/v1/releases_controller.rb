@@ -7,13 +7,14 @@ module Api
       # Supports filters:
       #   country   - ISO shortcode of the country (e.g., "US")
       #   network   - Network ID
+      #   web_channel - Web Channel ID
       #   start_date / end_date - YYYY-MM-DD range filter on air_date
       #   q         - Search query for show title (case-insensitive)
       #   page / per_page - Pagination params (defaults: page=1, per_page=20, capped at 100)
       def index
         releases = Release
-                     .joins(episode: { show: { network: :country } })
-                     .includes(episode: { show: { network: :country } })
+                     .joins(episode: { show: [ { network: :country }, :web_channel ] })
+                     .includes(episode: { show: [ { network: :country }, :web_channel ] })
 
         releases = apply_filters(releases)
 
@@ -43,6 +44,7 @@ module Api
       def apply_filters(scope)
         scope = scope.where(countries: { shortcode: params[:country] }) if params[:country].present?
         scope = scope.where(networks: { id: params[:network] }) if params[:network].present?
+        scope = scope.where(web_channels: { id: params[:web_channel] }) if params[:web_channel].present?
 
         if params[:start_date].present?
           scope = scope.where("releases.air_date >= ?", params[:start_date])
@@ -69,6 +71,25 @@ module Api
       # Minimal JSON serializer without external dependencies
       def serialize_releases(collection)
         collection.map do |release|
+          channel_data = if release.show.network.present?
+                            {
+                              id: release.show.network.id,
+                              name: release.show.network.name,
+                              channel_type: "network",
+                              country: {
+                                id: release.show.network.country.id,
+                                name: release.show.network.country.name,
+                                shortcode: release.show.network.country.shortcode
+                              }
+                            }
+          elsif release.show.web_channel.present?
+                            {
+                              id: release.show.web_channel.id,
+                              name: release.show.web_channel.name,
+                              channel_type: "web_channel"
+                            }
+          end
+
           {
             id: release.id,
             air_date: release.air_date,
@@ -85,15 +106,7 @@ module Api
                 id: release.show.id,
                 title: release.show.title,
                 show_type: release.show.show_type,
-                network: {
-                  id: release.network.id,
-                  name: release.network.name,
-                  country: {
-                    id: release.country.id,
-                    name: release.country.name,
-                    shortcode: release.country.shortcode
-                  }
-                }
+                channel: channel_data
               }
             }
           }

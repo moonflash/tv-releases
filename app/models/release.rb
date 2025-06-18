@@ -12,18 +12,15 @@ class Release < ApplicationRecord
     air_date = Date.parse(release_data["date"])
     air_time = Time.parse(release_data["time"]).strftime("%H:%M:%S")
 
-    # Find or create network
-    network = Network.find_or_create_by_fuzzy_name_and_external_id(
-      release_data["network_name"], 
-      release_data["network_id"],
-      nil # We'll handle country separately if needed
-    )
-    return nil unless network
+    # Find or create network with minimal data (external_id only). The full
+    # details will be fetched asynchronously via ExtractNetworkDataJob.
+    network = Network.find_or_create_by(external_id: release_data["network_id"]) do |n|
+      # Provide a temporary placeholder name to satisfy validations.
+      n.name = release_data["network_name"].presence || "Network #{release_data['network_id']}"
+    end
 
     # Find or create show with minimal data
-    show = Show.find_or_create_by(external_id: release_data["show_id"]) do |s|
-      s.network = network
-    end
+    show = Show.find_or_create_from_external_id(release_data["show_id"], network)
     return nil unless show
 
     # Enqueue show data extraction if show is new or incomplete

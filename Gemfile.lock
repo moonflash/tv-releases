@@ -96,6 +96,7 @@ GEM
       rexml
     crass (1.0.6)
     csv (3.3.5)
+    daemons (1.4.1)
     database_cleaner-active_record (2.2.1)
       activerecord (>= 5.a)
       database_cleaner-core (~> 2.0.0)
@@ -333,6 +334,7 @@ DEPENDENCIES
   awesome_print
   bootsnap
   brakeman
+  daemons
   database_cleaner-active_record (~> 2.0)
   debug
   delayed_job_active_record

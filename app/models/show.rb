@@ -9,9 +9,20 @@ class Show < ApplicationRecord
   def self.find_or_create_from_external_id(external_id, network)
     return nil if external_id.blank?
 
-    find_or_create_by(external_id: external_id) do |show|
-      show.network = network
+    new_record = false
+
+    show = find_or_create_by(external_id: external_id) do |s|
+      s.network = network
+      new_record = true
     end
+
+    # If the network was newly associated/created, make sure we enqueue a job
+    # to fetch its full details.
+    if new_record || show.network&.description.blank?
+      ExtractNetworkDataJob.perform_later(network.external_id)
+    end
+
+    show
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "[Show] Error creating show #{external_id}: #{e.message}"
     # In case of race condition, try to find again
@@ -20,4 +31,4 @@ class Show < ApplicationRecord
     Rails.logger.error "[Show] Exception creating show #{external_id}: #{e.message}"
     nil
   end
-end 
+end

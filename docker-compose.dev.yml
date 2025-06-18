@@ -15,6 +15,7 @@ services:
 
   web:
     build: .
+    image: tv-releases
     command: ./bin/docker-entrypoint ./bin/rails server -b 0.0.0.0 -p 3000
     volumes:
       - .:/rails
@@ -50,6 +51,17 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  worker:
+    image: tv-releases
+    command: bin/delayed_job -n 4 run
+    volumes:
+      - .:/rails
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/tv_releases_development
+      RAILS_ENV: development
+    depends_on:
+      - db
 
 volumes:
   postgres-data:

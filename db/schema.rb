@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_06_17_220000) do
+ActiveRecord::Schema[7.2].define(version: 2025_06_17_230010) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -58,6 +58,9 @@ ActiveRecord::Schema[7.2].define(version: 2025_06_17_220000) do
     t.bigint "country_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "time_zone"
+    t.string "official_site_url"
+    t.text "description"
     t.index ["country_id"], name: "index_networks_on_country_id"
     t.index ["external_id"], name: "index_networks_on_external_id", unique: true
     t.index ["name"], name: "index_networks_on_name", unique: true

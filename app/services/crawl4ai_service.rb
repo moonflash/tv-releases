@@ -43,7 +43,7 @@ class Crawl4aiService
                             timeout: 300)
 
     ap "[Crawl4aiService] HTTP #{response.code} (#{response.body.bytesize} bytes)"
-    
+
     # Log the response body for debugging HTTP 500 errors
     unless response.success?
       ap "[Crawl4aiService] Error response body: #{response.body}"
@@ -73,7 +73,7 @@ class Crawl4aiService
 
   def self.extract_show(show_id)
     url = "https://www.tvmaze.com/shows/#{show_id}"
-    
+
     instruction = <<~INSTRUCTION
       Extract show information from the TVMaze show page.
       Return the show data using the following JSON schema:
@@ -100,7 +100,7 @@ class Crawl4aiService
 
   def self.extract_episode(episode_id)
     url = "https://www.tvmaze.com/episodes/#{episode_id}"
-    
+
     instruction = <<~INSTRUCTION
       Extract episode information from the TVMaze episode page.
       Return the episode data using the following JSON schema:
@@ -124,6 +124,32 @@ class Crawl4aiService
     {}
   end
 
+  def self.extract_network(network_id)
+    url = "https://www.tvmaze.com/networks/#{network_id}"
+
+    instruction = <<~INSTRUCTION
+      Extract network information from the TVMaze network page.
+      Return the network data using the following JSON schema:
+
+      schema: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          country_code: { type: "string", pattern: "^[A-Z]{2}$" },
+          time_zone: { type: "string" },
+          official_url: { type: "string" },
+          description: { type: "string" }
+        },
+        required: ["name"]
+      }
+    INSTRUCTION
+
+    make_crawl_request(url, instruction)
+  rescue => e
+    ap "Exception while extracting network #{network_id}: #{e.message}"
+    {}
+  end
+
   private
 
   def self.make_crawl_request(url, instruction)
@@ -137,7 +163,7 @@ class Crawl4aiService
                             timeout: 300)
 
     ap "[Crawl4aiService] HTTP #{response.code} (#{response.body.bytesize} bytes) for #{url}"
-    
+
     unless response.success?
       ap "[Crawl4aiService] Error response body: #{response.body}"
       return {}

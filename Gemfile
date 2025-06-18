@@ -34,6 +34,7 @@ gem "react-rails", "~> 2.7"
 
 # Background job processing
 gem "delayed_job_active_record"
+gem "daemons"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

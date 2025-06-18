@@ -1,5 +1,8 @@
 #!/bin/bash -e
 
+# Remove a potentially pre-existing server.pid for Rails.
+rm -f /rails/tmp/pids/server.pid
+
 # Enable jemalloc for reduced memory usage and latency.
 if [ -z "${LD_PRELOAD+x}" ] && [ -f /usr/lib/*/libjemalloc.so.2 ]; then
   export LD_PRELOAD="$(echo /usr/lib/*/libjemalloc.so.2)"

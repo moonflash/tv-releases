@@ -51,4 +51,29 @@ namespace :releases do
 
     puts "Maintenance completed!"
   end
+
+  desc "Reset releases-related data by wiping the relevant tables so a fresh import can be performed"
+  task reset: :environment do
+    puts "Resetting releases data..."
+
+    models = [ Episode, Release, Show, Network, Country ]
+
+    ActiveRecord::Base.connection.disable_referential_integrity do
+      models.each do |model|
+        model.delete_all
+
+        # Reset auto-increment sequences (PostgreSQL, etc.) if supported by the adapter
+        if ActiveRecord::Base.connection.respond_to?(:reset_pk_sequence!)
+          ActiveRecord::Base.connection.reset_pk_sequence!(model.table_name)
+        end
+      end
+    end
+
+    puts "All release data has been wiped out. You can now run the importer from scratch."
+  rescue => e
+    puts "Error during reset: #{e.message}"
+    Rails.logger.error "[ReleaseResetTask] Error: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    exit 1
+  end
 end

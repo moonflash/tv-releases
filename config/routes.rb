@@ -15,6 +15,8 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       resources :releases, only: [ :index ]
+      resources :countries, only: [ :index ]
+      resources :networks,  only: [ :index ]
     end
   end
 end

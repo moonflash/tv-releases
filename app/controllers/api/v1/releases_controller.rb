@@ -13,7 +13,7 @@ module Api
       #   page / per_page - Pagination params (defaults: page=1, per_page=20, capped at 100)
       def index
         releases = Release
-                     .joins(episode: { show: [ { network: :country }, :web_channel ] })
+                     .left_joins(episode: { show: [ { network: :country }, :web_channel ] })
                      .includes(episode: { show: [ { network: :country }, :web_channel ] })
 
         releases = apply_filters(releases)
@@ -71,23 +71,24 @@ module Api
       # Minimal JSON serializer without external dependencies
       def serialize_releases(collection)
         collection.map do |release|
-          channel_data = if release.show.network.present?
-                            {
-                              id: release.show.network.id,
-                              name: release.show.network.name,
-                              channel_type: "network",
-                              country: {
-                                id: release.show.network.country.id,
-                                name: release.show.network.country.name,
-                                shortcode: release.show.network.country.shortcode
-                              }
-                            }
-          elsif release.show.web_channel.present?
-                            {
-                              id: release.show.web_channel.id,
-                              name: release.show.web_channel.name,
-                              channel_type: "web_channel"
-                            }
+          network_data = nil
+          web_channel_data = nil
+
+          if (net = release.show.network)
+            network_data = {
+              id: net.id,
+              name: net.name,
+              country: net.country.present? ? {
+                id: net.country.id,
+                name: net.country.name,
+                shortcode: net.country.shortcode
+              } : nil
+            }
+          elsif (wch = release.show.web_channel)
+            web_channel_data = {
+              id: wch.id,
+              name: wch.name
+            }
           end
 
           {
@@ -106,7 +107,8 @@ module Api
                 id: release.show.id,
                 title: release.show.title,
                 show_type: release.show.show_type,
-                channel: channel_data
+                network: network_data,
+                web_channel: web_channel_data
               }
             }
           }

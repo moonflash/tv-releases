@@ -88,4 +88,12 @@ Rails.application.configure do
     Bullet.rails_logger = true
     Bullet.add_footer = true
   end
+
+  # ───── Allow ngrok tunnels ─────
+  # Option A – allow only the exact tunnel URL you got back:
+  config.hosts << "f119-194-88-96-164.ngrok-free.app"
+
+  # Option B – allow ANY *.ngrok-free.app sub-domain (so you don't have to edit
+  # this file every time ngrok gives you a new random URL):
+  # config.hosts << /[a-z0-9\-]+\.ngrok\-free\.app/
 end

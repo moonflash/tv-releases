@@ -26,6 +26,10 @@ docker compose -f docker-compose.dev.yml up --scale worker=4
 ### IMPORTANT!
 due to the lack of time to investigate it's capabilities, Crawl4ai service is set to be only single threaded. Because of that we are firstly importing releases and only after that we run workers that will call Show/Network/Episodes endpoints to scrape data. Documentation suggests that it can be multithreaded and with Crawl4ai properly set we should have unlimited parallel processes to handle import much faster.
 
+## ReactJS frontend
+
+http://localhost:3000
+
 ### Setup Daily Automation
 
 See [CRON_SETUP.md](CRON_SETUP.md) for instructions on setting up daily automated imports.

@@ -45,7 +45,7 @@ class CreateNewTables < ActiveRecord::Migration[7.2]
       t.timestamps
     end
     add_index :episodes, :external_id, unique: true
-    add_index :episodes, [:show_id, :season_number, :episode_number], unique: true, name: 'index_episodes_on_show_season_episode'
+    add_index :episodes, [ :show_id, :season_number, :episode_number ], unique: true, name: 'index_episodes_on_show_season_episode'
 
     # Releases table (simplified)
     create_table :releases do |t|
@@ -54,7 +54,7 @@ class CreateNewTables < ActiveRecord::Migration[7.2]
       t.references :episode, null: false, foreign_key: true
       t.timestamps
     end
-    add_index :releases, [:air_date, :air_time]
-    add_index :releases, [:episode_id, :air_date, :air_time], unique: true, name: 'index_releases_on_episode_date_time'
+    add_index :releases, [ :air_date, :air_time ]
+    add_index :releases, [ :episode_id, :air_date, :air_time ], unique: true, name: 'index_releases_on_episode_date_time'
   end
 end

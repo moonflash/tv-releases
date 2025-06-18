@@ -79,4 +79,4 @@ RSpec.describe Episode, type: :model do
       expect(episode.title).to eq('S01E02')
     end
   end
-end 
+end

@@ -18,4 +18,4 @@ class ExtractEpisodeDataJob < ApplicationJob
   rescue => e
     Rails.logger.error "[ExtractEpisodeDataJob] Error extracting episode data for episode_id #{episode_id}: #{e.message}"
   end
-end 
+end

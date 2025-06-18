@@ -80,7 +80,7 @@ RSpec.describe Crawl4aiService, type: :service do
         "description" => "Epic fantasy series",
         "show_type" => "Drama",
         "official_site_url" => "https://hbo.com/got",
-        "genres" => ["Fantasy", "Drama"],
+        "genres" => [ "Fantasy", "Drama" ],
         "vote" => 9.2
       )
     end
@@ -90,7 +90,7 @@ RSpec.describe Crawl4aiService, type: :service do
         a_string_matching(/tvmaze\.com%2Fshows%2F123/),
         any_args
       ).and_return(mock_response)
-      
+
       described_class.extract_show(show_id)
     end
   end
@@ -139,7 +139,7 @@ RSpec.describe Crawl4aiService, type: :service do
         a_string_matching(/tvmaze\.com%2Fepisodes%2F456/),
         any_args
       ).and_return(mock_response)
-      
+
       described_class.extract_episode(episode_id)
     end
   end

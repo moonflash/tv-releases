@@ -59,4 +59,4 @@ RSpec.describe Network, type: :model do
       expect(Network.normalize_network_name('discovery channel')).to eq('Discovery')
     end
   end
-end 
+end

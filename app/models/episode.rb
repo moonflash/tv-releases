@@ -27,4 +27,4 @@ class Episode < ApplicationRecord
     return "TBD" if season_number.zero? || episode_number.zero?
     "S#{season_number.to_s.rjust(2, '0')}E#{episode_number.to_s.rjust(2, '0')}"
   end
-end 
+end

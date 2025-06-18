@@ -112,4 +112,4 @@ class Network < ApplicationRecord
 
     matrix[str1.length][str2.length]
   end
-end 
+end

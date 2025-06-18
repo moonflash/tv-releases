@@ -3,4 +3,4 @@ FactoryBot.define do
     sequence(:name) { |n| "Country#{n}" }
     sequence(:shortcode) { |n| "C#{n}" }
   end
-end 
+end

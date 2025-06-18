@@ -58,6 +58,6 @@ end
 gem "httparty"
 gem "awesome_print"
 
-gem 'shoulda-matchers', '~> 5.0'
-gem 'database_cleaner-active_record', '~> 2.0', group: :test
-gem 'factory_bot_rails', group: [:development, :test]
+gem "shoulda-matchers", "~> 5.0"
+gem "database_cleaner-active_record", "~> 2.0", group: :test
+gem "factory_bot_rails", group: [ :development, :test ]

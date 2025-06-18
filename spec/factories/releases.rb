@@ -4,4 +4,4 @@ FactoryBot.define do
     air_time { '20:00' }
     association :episode
   end
-end 
+end

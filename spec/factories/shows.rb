@@ -4,4 +4,4 @@ FactoryBot.define do
     sequence(:external_id) { |n| "show_#{n}" }
     association :network
   end
-end 
+end

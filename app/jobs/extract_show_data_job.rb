@@ -19,4 +19,4 @@ class ExtractShowDataJob < ApplicationJob
   rescue => e
     Rails.logger.error "[ExtractShowDataJob] Error extracting show data for show_id #{show_id}: #{e.message}"
   end
-end 
+end

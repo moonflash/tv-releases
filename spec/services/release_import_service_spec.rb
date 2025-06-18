@@ -107,18 +107,18 @@ RSpec.describe ReleaseImportService, type: :service do
     end
 
     it 'returns data on first successful attempt' do
-      allow(Crawl4aiService).to receive(:extract).and_return([{ 'test' => 'data' }])
+      allow(Crawl4aiService).to receive(:extract).and_return([ { 'test' => 'data' } ])
 
       result = service.send(:extract_with_retry, url)
-      expect(result).to eq([{ 'test' => 'data' }])
+      expect(result).to eq([ { 'test' => 'data' } ])
     end
 
     it 'retries when no data is returned' do
-      allow(Crawl4aiService).to receive(:extract).and_return([], [], [{ 'test' => 'data' }])
+      allow(Crawl4aiService).to receive(:extract).and_return([], [], [ { 'test' => 'data' } ])
       allow(service).to receive(:sleep) # Don't actually sleep in tests
 
       result = service.send(:extract_with_retry, url)
-      expect(result).to eq([{ 'test' => 'data' }])
+      expect(result).to eq([ { 'test' => 'data' } ])
       expect(Crawl4aiService).to have_received(:extract).exactly(3).times
     end
 

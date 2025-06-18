@@ -4,7 +4,7 @@ app:
   host: "0.0.0.0"
   port: 11235
   reload: False
-  workers: 1
+  workers: 4
   timeout_keep_alive: 300
 
 llm:
@@ -27,6 +27,7 @@ llm:
     request_timeout: 600 # Request timeout
     api_base: "https://ollama-1.koloit.net/4"
     drop_params: true   # Drop unsupported parameters
+    max_parallel_requests: 4
   # HTTP client configuration
   http_client:
     timeout: 600        # HTTP client timeout

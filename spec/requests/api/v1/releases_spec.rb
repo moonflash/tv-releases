@@ -13,9 +13,9 @@ RSpec.describe "Api::V1::Releases", type: :request do
 
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        expect(json.size).to eq(2)
-        expect(json.first["id"]).to eq(older_release.id)
-        expect(json.second["id"]).to eq(newer_release.id)
+        expect(json["releases"].size).to eq(2)
+        expect(json["releases"].first["id"]).to eq(older_release.id)
+        expect(json["releases"].second["id"]).to eq(newer_release.id)
       end
     end
 
@@ -37,8 +37,8 @@ RSpec.describe "Api::V1::Releases", type: :request do
 
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        expect(json.size).to eq(1)
-        expect(json.first.dig('episode', 'show', 'network', 'country', 'shortcode')).to eq('US')
+        expect(json["releases"].size).to eq(1)
+        expect(json["releases"].first.dig('episode', 'show', 'network', 'country', 'shortcode')).to eq('US')
       end
     end
 
@@ -57,8 +57,8 @@ RSpec.describe "Api::V1::Releases", type: :request do
 
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        expect(json.size).to eq(1)
-        expect(json.first.dig('episode', 'show', 'network', 'id')).to eq(network_a.id)
+        expect(json["releases"].size).to eq(1)
+        expect(json["releases"].first.dig('episode', 'show', 'network', 'id')).to eq(network_a.id)
       end
     end
 
@@ -71,7 +71,7 @@ RSpec.describe "Api::V1::Releases", type: :request do
         get path, params: { start_date: '2025-01-10', end_date: '2025-01-20' }
 
         expect(response).to have_http_status(:ok)
-        json_ids = JSON.parse(response.body).map { |h| h['id'] }
+        json_ids = JSON.parse(response.body).dig('releases').map { |h| h['id'] }
         expect(json_ids).to include(in_range_release.id)
         expect(json_ids).not_to include(before_range.id, after_range.id)
       end
@@ -89,8 +89,8 @@ RSpec.describe "Api::V1::Releases", type: :request do
 
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        expect(json.size).to eq(1)
-        expect(json.first.dig('episode', 'show', 'title')).to eq('My Great Show')
+        expect(json["releases"].size).to eq(1)
+        expect(json["releases"].first.dig('episode', 'show', 'title')).to eq('My Great Show')
       end
     end
 
@@ -104,8 +104,8 @@ RSpec.describe "Api::V1::Releases", type: :request do
 
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        expect(json.size).to eq(1)
-        expect(json.first['id']).to eq(releases.third.id)
+        expect(json["releases"].size).to eq(1)
+        expect(json["releases"].first['id']).to eq(releases.third.id)
       end
     end
   end

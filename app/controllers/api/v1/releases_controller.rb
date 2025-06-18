@@ -16,10 +16,26 @@ module Api
                      .includes(episode: { show: { network: :country } })
 
         releases = apply_filters(releases)
-        releases = releases.order(air_date: :asc)
-        releases = releases.offset(@offset).limit(@per_page)
 
-        render json: serialize_releases(releases)
+        # Capture the total number of releases BEFORE pagination is applied so
+        # the client can know when it has fetched everything for infinite scroll.
+        total_count = releases.count
+
+        # Apply ordering & pagination after we have the total count
+        releases = releases.order(air_date: :asc)
+                       .offset(@offset)
+                       .limit(@per_page)
+
+        render json: {
+          releases: serialize_releases(releases),
+          meta: {
+            total_count: total_count,
+            page: @page,
+            per_page: @per_page,
+            has_more: (@offset + releases.size) < total_count,
+            next_page: (@offset + releases.size) < total_count ? @page + 1 : nil
+          }
+        }
       end
 
       private
@@ -45,9 +61,9 @@ module Api
       end
 
       def set_pagination_params
-        page_param = params.fetch(:page, 1).to_i
+        @page       = params.fetch(:page, 1).to_i
         @per_page   = [ [ params.fetch(:per_page, 20).to_i, 1 ].max, 100 ].min
-        @offset     = (page_param - 1) * @per_page
+        @offset     = (@page - 1) * @per_page
       end
 
       # Minimal JSON serializer without external dependencies
